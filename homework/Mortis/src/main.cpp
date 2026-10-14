@@ -7,11 +7,12 @@
 // 处理流水线（每帧执行）：
 //   1. 绿色分割：BGR -> HSV，阈值提取绿色区域，开+闭运算去噪
 //   2. 候选筛选：轮廓 -> 面积/圆度/长宽比过滤，区分绿球与绿色圆柱
-//   3. 跨帧匹配：形状打分 + 上一帧速度预测位置，抑制目标跳变
-//   4. 遮挡外推：短时丢失用速度外推位置，避免贴边时中断
+//   3. 跨帧匹配：形状打分 + 卡尔曼滤波预测位置，抑制目标跳变
+//   4. 遮挡外推：短时丢失时沿用卡尔曼预测，并逐帧更新预测状态
 //   5. 可视化：检测圆 + 速度箭头(随速度变色) + 球大小/速度文本 + 运动轨迹
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/video/tracking.hpp>  // cv::KalmanFilter 的声明
 #include <opencv2/freetype.hpp>
 
 #include <algorithm>
@@ -84,8 +85,12 @@ constexpr double kStableSpeedDeltaPps = 2.0;
 // 元数据无法提供有效 FPS 时采用的显示/输出假设值；此时速度只是近似值
 constexpr double kDefaultFps = 30.0;
 
-// 速度平滑系数（EMA）：越小越平滑，用于抑制箭头方向/长度的帧间抖动
-constexpr double kSmoothAlpha = 0.35;
+// 卡尔曼滤波噪声参数。数值越大，表示越相信模型/测量中的不确定性。
+// 加速度过程噪声越大：越愿意快速改变速度，转向时跟得更快，但也可能更抖。
+constexpr float kKalmanAccelerationNoise = 1.0F;
+// 检测中心点的测量噪声方差（像素^2）；这里假设检测中心的标准差约为 4 像素。
+// 调大该值会更信任运动模型、降低检测抖动；调小则更贴近每帧检测位置。
+constexpr float kKalmanMeasurementNoiseVariance = 16.0F;
 
 // 黑体（SimHei）候选路径：优先 Windows 字体（WSL 可访问），失败回退到内置字体
 const char * const kFontPaths[] = {
@@ -110,14 +115,154 @@ struct BallCandidate {
 // 当前帧的跟踪状态
 struct BallTrack {
   cv::Point2f center;
-  cv::Point2f velocity;         // 相邻帧真实位移（像素/帧），用于位置预测
-  cv::Point2f smooth_velocity;  // EMA 平滑后的速度（像素/帧），用于箭头显示
+  cv::Point2f velocity;         // 卡尔曼滤波估计的速度（像素/帧）
+  cv::Point2f smooth_velocity;  // 保留原字段名以兼容绘制代码；现在同样保存滤波后的速度
   float radius = 0.0F;
-  double speed = 0.0;           // 平滑速度大小（像素/帧）
+  double speed = 0.0;           // 卡尔曼滤波估计的速度大小（像素/帧）
   double confidence = 0.0;      // 检测置信度（0~1），来自形状打分
   cv::Rect bounding_box;
   int lost_frames = 0;
   bool initialized = false;
+};
+
+// ---------------------------------------------------------------------------
+// 卡尔曼滤波器：使用匀速模型估计小球中心位置和速度
+// ---------------------------------------------------------------------------
+// 状态向量 x = [位置 x, 位置 y, 速度 vx, 速度 vy]^T，共 4 个状态量。
+// 观测向量 z = [检测到的中心 x, 检测到的中心 y]^T，只直接观测位置。
+//
+// 每帧执行顺序：
+//   1. predict()：根据上一时刻的位置和速度预测当前帧的位置；
+//   2. 若检测到小球，correct() 用实际检测中心修正预测；
+//   3. 若本帧没有检测到小球，acceptPrediction() 将预测结果作为新状态，
+//      下一帧就能从本帧预测位置继续预测，而不是反复从最后一次检测位置出发。
+//
+// 当前按“每帧”为时间单位，因此速度单位是像素/帧。假设相邻帧之间短时间内近似匀速；
+// 目标突然转向时，过程噪声会允许滤波器逐步修正速度。
+class BallKalmanTracker {
+public:
+  BallKalmanTracker() : filter_(4, 2, 0, CV_32F)
+  {
+    // 状态转移矩阵 A：x' = x + vx、y' = y + vy，速度暂按匀速保持。
+    filter_.transitionMatrix = (cv::Mat_<float>(4, 4) <<
+      1.0F, 0.0F, 1.0F, 0.0F,
+      0.0F, 1.0F, 0.0F, 1.0F,
+      0.0F, 0.0F, 1.0F, 0.0F,
+      0.0F, 0.0F, 0.0F, 1.0F);
+
+    // 观测矩阵 H：检测器只提供 x、y，不直接提供 vx、vy。
+    filter_.measurementMatrix = cv::Mat::zeros(2, 4, CV_32F);
+    filter_.measurementMatrix.at<float>(0, 0) = 1.0F;
+    filter_.measurementMatrix.at<float>(1, 1) = 1.0F;
+
+    // 过程噪声协方差 Q：用白噪声加速度模型描述目标运动并非完全匀速。
+    // dt = 1 帧时，单个坐标对应的矩阵项为 [dt^4/4, dt^3/2; dt^3/2, dt^2]。
+    // 这能让速度在连续观测到转向或加速时逐步发生变化。
+    const float q = kKalmanAccelerationNoise;
+    filter_.processNoiseCov = (cv::Mat_<float>(4, 4) <<
+      0.25F * q, 0.0F,       0.5F * q, 0.0F,
+      0.0F,       0.25F * q, 0.0F,       0.5F * q,
+      0.5F * q,   0.0F,       q,          0.0F,
+      0.0F,       0.5F * q,   0.0F,       q);
+
+    // 测量噪声协方差 R：检测中心可能因轮廓边缘变化而有几像素抖动。
+    filter_.measurementNoiseCov = (cv::Mat_<float>(2, 2) <<
+      kKalmanMeasurementNoiseVariance, 0.0F,
+      0.0F, kKalmanMeasurementNoiseVariance);
+
+    initialized_ = false;
+    prediction_pending_ = false;
+  }
+
+  bool isInitialized() const { return initialized_; }
+
+  // 用首次检测结果初始化位置；初始速度设为 0，因为单个观测无法推断运动方向。
+  void initialize(const cv::Point2f & center)
+  {
+    filter_.statePost = cv::Mat::zeros(4, 1, CV_32F);
+    filter_.statePost.at<float>(0, 0) = center.x;
+    filter_.statePost.at<float>(1, 0) = center.y;
+    filter_.statePost.at<float>(2, 0) = 0.0F;
+    filter_.statePost.at<float>(3, 0) = 0.0F;
+
+    // 初始位置的不确定性设为 25（标准差约 5 像素），速度不确定性设为 100。
+    // 较大的速度初始方差可让后续几帧的观测快速建立合理速度估计。
+    filter_.errorCovPost = cv::Mat::zeros(4, 4, CV_32F);
+    filter_.errorCovPost.at<float>(0, 0) = 25.0F;
+    filter_.errorCovPost.at<float>(1, 1) = 25.0F;
+    filter_.errorCovPost.at<float>(2, 2) = 100.0F;
+    filter_.errorCovPost.at<float>(3, 3) = 100.0F;
+
+    initialized_ = true;
+    prediction_pending_ = false;
+  }
+
+  // 预测当前帧状态。调用后必须接着调用 correct() 或 acceptPrediction()。
+  cv::Point2f predict()
+  {
+    if (!initialized_) {
+      return cv::Point2f();
+    }
+
+    // predict() 的结果放在 statePre 中，包含预测位置和预测速度。
+    const cv::Mat prediction = filter_.predict();
+    prediction_pending_ = true;
+    return cv::Point2f(prediction.at<float>(0, 0), prediction.at<float>(1, 0));
+  }
+
+  // 有真实检测时，用检测到的中心修正当前帧的预测结果。
+  cv::Point2f correct(const cv::Point2f & measured_center)
+  {
+    if (!initialized_) {
+      initialize(measured_center);
+      return measured_center;
+    }
+
+    // 正常流程会在本帧先调用 predict()，然后调用 correct()。
+    // 此保护分支用于避免调用顺序意外时直接使用过期预测状态。
+    if (!prediction_pending_) {
+      (void)filter_.predict();
+      prediction_pending_ = true;
+    }
+
+    const cv::Mat measurement = (cv::Mat_<float>(2, 1) <<
+      measured_center.x, measured_center.y);
+    const cv::Mat estimate = filter_.correct(measurement);
+    prediction_pending_ = false;
+    return cv::Point2f(estimate.at<float>(0, 0), estimate.at<float>(1, 0));
+  }
+
+  // 本帧没有观测时，接受预测状态，以便下一帧从预测结果继续向前推算。
+  void acceptPrediction()
+  {
+    if (!initialized_ || !prediction_pending_) {
+      return;
+    }
+    filter_.statePre.copyTo(filter_.statePost);
+    filter_.errorCovPre.copyTo(filter_.errorCovPost);
+    prediction_pending_ = false;
+  }
+
+  // 返回当前滤波状态里的速度估计（像素/帧）。
+  cv::Point2f velocity() const
+  {
+    if (!initialized_) {
+      return cv::Point2f();
+    }
+    const cv::Mat & state = prediction_pending_ ? filter_.statePre : filter_.statePost;
+    return cv::Point2f(state.at<float>(2, 0), state.at<float>(3, 0));
+  }
+
+  void reset()
+  {
+    initialized_ = false;
+    prediction_pending_ = false;
+  }
+
+private:
+  cv::KalmanFilter filter_;
+  bool initialized_ = false;
+  bool prediction_pending_ = false;
 };
 
 // ---------------------------------------------------------------------------
@@ -217,10 +362,11 @@ double computeShapeScore(const BallCandidate & c)
   return 0.45 * circularity_score + 0.35 * aspect_score + 0.20 * area_score;
 }
 
-// 从候选中选出最可能的目标：形状分 + 跨帧运动连续性
+// 从候选中选出最可能的目标：形状分 + 卡尔曼预测位置的连续性。
+// predicted_center 是当前帧的先验预测位置；尚未初始化滤波器时为空。
 std::optional<BallCandidate> chooseBestCandidate(
   const std::vector<BallCandidate> & candidates, const BallTrack & previous,
-  double * confidence = nullptr)
+  const std::optional<cv::Point2f> & predicted_center, double * confidence = nullptr)
 {
   if (candidates.empty()) {
     return std::nullopt;
@@ -232,13 +378,12 @@ std::optional<BallCandidate> chooseBestCandidate(
   for (const auto & c : candidates) {
     double score = computeShapeScore(c);
 
-    if (previous.initialized) {
-      // 用上一帧速度预测当前位置
-      const cv::Point2f predicted = previous.center + previous.velocity;
-      const double distance = cv::norm(c.center - predicted);
+    if (previous.initialized && predicted_center.has_value()) {
+      // 用卡尔曼滤波器的先验预测位置计算距离，而不是简单地把上一帧位移加一次。
+      const double distance = cv::norm(c.center - *predicted_center);
       const double max_distance = std::max(previous.radius * 1.8, previous.speed * 3.5 + 35.0);
 
-      // 距离太远 => 跳到了别的绿色物体，拒绝
+      // 距离预测位置太远，可能是误选了另一块绿色区域。
       if (distance > max_distance) {
         continue;
       }
@@ -501,6 +646,7 @@ int main(int argc, char ** argv)
   }
 
   BallTrack previous;
+  BallKalmanTracker kalman_tracker;  // 负责跨帧融合检测位置、估计速度并预测短时运动
   std::deque<cv::Point2f> trail;
   int frame_index = 0;
 
@@ -510,32 +656,43 @@ int main(int argc, char ** argv)
       break;
     }
 
+    // 先预测当前帧的小球位置，再用这个位置辅助候选匹配。
+    // 如果滤波器还没初始化（视频开始或跟踪超时重置），则本帧没有预测中心。
+    std::optional<cv::Point2f> predicted_center;
+    if (kalman_tracker.isInitialized()) {
+      predicted_center = kalman_tracker.predict();
+    }
+
     const auto candidates = detectBallCandidates(frame);
     double confidence = 0.0;
-    const auto selected = chooseBestCandidate(candidates, previous, &confidence);
+    const auto selected = chooseBestCandidate(candidates, previous, predicted_center, &confidence);
 
     if (selected.has_value()) {
       BallTrack current;
-      current.center = selected->center;
       current.radius = selected->radius;
       current.bounding_box = selected->bounding_box;
       current.confidence = confidence;
       current.initialized = true;
       current.lost_frames = 0;
 
-      // 若上一帧是外推位置，不能把“重获目标时的位置差”当成普通相邻帧位移。
-      // 重获的第一帧先重置速度估计，下一帧再恢复正常计算，避免出现虚假的速度尖峰。
-      if (previous.initialized && previous.lost_frames == 0) {
-        const cv::Point2f raw_velocity = current.center - previous.center;
-        current.velocity = raw_velocity;
-        current.smooth_velocity =
-          static_cast<float>(kSmoothAlpha) * raw_velocity +
-          static_cast<float>(1.0 - kSmoothAlpha) * previous.smooth_velocity;
+      if (kalman_tracker.isInitialized()) {
+        // 有检测结果：使用观测位置修正本帧预测，得到更平滑的位置与速度估计。
+        current.center = kalman_tracker.correct(selected->center);
       } else {
-        current.velocity = cv::Point2f(0.0F, 0.0F);
-        current.smooth_velocity = cv::Point2f(0.0F, 0.0F);
+        // 第一次发现目标（或长时间丢失后重置）时，以检测中心初始化滤波器。
+        kalman_tracker.initialize(selected->center);
+        current.center = selected->center;
       }
-      current.speed = cv::norm(current.smooth_velocity);
+
+      // 圆心使用滤波后的坐标；标签框也同步平移，避免框和圆心明显错位。
+      const cv::Point2f center_offset = current.center - selected->center;
+      current.bounding_box.x += static_cast<int>(std::round(center_offset.x));
+      current.bounding_box.y += static_cast<int>(std::round(center_offset.y));
+
+      // 卡尔曼状态同时估计位置和速度，因此不再需要额外的 EMA 速度平滑。
+      current.velocity = kalman_tracker.velocity();
+      current.smooth_velocity = current.velocity;
+      current.speed = cv::norm(current.velocity);
 
       trail.push_back(current.center);
       if (trail.size() > kMaxTrail) {
@@ -544,10 +701,16 @@ int main(int argc, char ** argv)
       drawTrail(frame, trail);
       drawTrackOverlay(frame, current, previous, fps, frame_index, false);
       previous = current;
-    } else if (previous.initialized && previous.lost_frames < kMaxLostFrames) {
-      // 短时丢失：按上一帧速度外推。注意这只是预测，不是实际检测结果。
+    } else if (previous.initialized && previous.lost_frames < kMaxLostFrames &&
+               predicted_center.has_value()) {
+      // 短时丢失：没有实际观测，接受卡尔曼预测状态并继续外推。
+      // 画面中显示的是预测位置，并非这一帧真实检测到了小球。
+      kalman_tracker.acceptPrediction();
       BallTrack predicted = previous;
-      predicted.center = clampPointToFrame(previous.center + previous.velocity, frame.size());
+      predicted.center = clampPointToFrame(*predicted_center, frame.size());
+      predicted.velocity = kalman_tracker.velocity();
+      predicted.smooth_velocity = predicted.velocity;
+      predicted.speed = cv::norm(predicted.velocity);
       predicted.bounding_box.x = static_cast<int>(std::round(predicted.center.x - predicted.radius));
       predicted.bounding_box.y = static_cast<int>(std::round(predicted.center.y - predicted.radius));
       predicted.bounding_box.width = static_cast<int>(std::round(predicted.radius * 2.0F));
@@ -562,7 +725,9 @@ int main(int argc, char ** argv)
       drawTrackOverlay(frame, predicted, previous, fps, frame_index, true);
       previous = predicted;
     } else {
+      // 连续丢失超过允许帧数，清空轨迹并重置滤波器，避免长期错误外推。
       trail.clear();
+      kalman_tracker.reset();
       drawText(frame, "green ball lost", cv::Point(20, 36), 28, cv::Scalar(0, 0, 255), -1);
       previous = BallTrack{};
     }
