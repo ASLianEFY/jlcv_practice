@@ -6,9 +6,9 @@
 //
 // 处理流水线（每帧执行）：
 //   1. 绿色分割：BGR -> HSV，阈值提取绿色区域，开+闭运算去噪
-//   2. 候选筛选：轮廓 -> 面积/圆度/长宽比过滤，区分绿球与绿色圆柱
-//   3. 跨帧匹配：形状打分 + 卡尔曼滤波预测位置，抑制目标跳变
-//   4. 遮挡外推：短时丢失时沿用卡尔曼预测，并逐帧更新预测状态
+//   2. 椭圆拟合：对每个绿色轮廓 fitEllipse，直接得到圆心、长短轴与朝向
+//   3. 形状筛选：用椭圆短轴/长轴（圆度）区分绿球（≈1）与绿色圆柱（细长）
+//   4. 跨帧匹配：圆度打分 + 卡尔曼滤波预测位置，抑制目标跳变
 //   5. 可视化：检测圆 + 速度箭头(随速度变色) + 球大小/速度文本 + 运动轨迹
 
 #include <opencv2/opencv.hpp>
@@ -38,29 +38,18 @@ namespace {
 const cv::Scalar kLowerGreen(35, 45, 40);
 const cv::Scalar kUpperGreen(95, 255, 255);
 
-// 轮廓面积范围：绿球在这个视频里比较大，按像素面积卡一个合理区间
-constexpr double kMinArea = 7000.0;
-constexpr double kMaxArea = 32000.0;
+// 面积下限：仅用于滤除细小噪点，真正的球/圆柱区分交给椭圆圆度
+constexpr double kMinArea = 2000.0;
 
-// 形状打分参数：与上面的筛选阈值分开管理，便于调参
-constexpr double kScoreCircularityStart = 0.68;
-constexpr double kScoreCircularityRange = 0.12;
-constexpr double kTargetArea = 12000.0;
-constexpr double kAreaScoreTolerance = 10000.0;
-constexpr double kDistancePenalty = 0.01;
-constexpr double kRadiusPenalty = 0.02;
-constexpr double kMaxRadiusChangeRatio = 0.45;
+// 椭圆拟合的圆度阈值（短轴/长轴）：正圆≈1，细长≈0，用于区分绿球与绿色圆柱
+constexpr double kMinEllipseRoundness = 0.80;
+constexpr double kTypicalBallRadius = 60.0;
+constexpr double kRadiusTolerance = 40.0;
 
-// 正常帧的形状阈值：圆度（=4πA/P²，理想圆为 1）和长宽比（w/h）
-constexpr double kMinCircularity = 0.68;
-constexpr double kMinAspect = 0.85;
-constexpr double kMaxAspect = 1.20;
-
-// 贴边帧的放宽阈值：球被画面边缘裁切后形状会变形，放宽避免漏检
-constexpr double kBorderMinCircularity = 0.45;
-constexpr double kBorderMinAspect = 0.55;
-constexpr double kBorderMaxAspect = 1.45;
-constexpr int kBorderMargin = 8;
+// 跨帧匹配惩罚与门限
+constexpr double kDistancePenalty = 0.02;
+constexpr double kRadiusPenalty = 0.03;
+constexpr double kMaxRadiusChangeRatio = 0.50;
 
 // 短时遮挡：连续丢失帧数不超过该值时用速度外推，否则重置
 constexpr int kMaxLostFrames = 8;
@@ -105,10 +94,8 @@ const char * const kFontPaths[] = {
 // 单个绿色轮廓的几何信息
 struct BallCandidate {
   cv::Point2f center;
-  float radius = 0.0F;
-  double area = 0.0;
-  double circularity = 0.0;
-  double aspect_ratio = 0.0;
+  float radius = 0.0F;      // 霍夫圆检测的半径（像素）
+  double roundness = 0.0;   // 椭圆拟合短轴/长轴，1 表示正圆
   cv::Rect bounding_box;
 };
 
@@ -269,14 +256,6 @@ private:
 // 工具函数
 // ---------------------------------------------------------------------------
 
-// 判断轮廓是否贴近画面边缘（贴边时球会被裁切，需要放宽形状约束）
-bool isNearFrameBorder(const cv::Rect & box, const cv::Size & frame_size, int margin = kBorderMargin)
-{
-  return box.x <= margin || box.y <= margin ||
-         box.x + box.width >= frame_size.width - margin ||
-         box.y + box.height >= frame_size.height - margin;
-}
-
 // 把点限制在画面内（外推时避免越界）
 cv::Point2f clampPointToFrame(const cv::Point2f & p, const cv::Size & frame_size)
 {
@@ -285,7 +264,7 @@ cv::Point2f clampPointToFrame(const cv::Point2f & p, const cv::Size & frame_size
   return cv::Point2f(x, y);
 }
 
-// 检测绿球候选：HSV 分割 + 形态学 + 轮廓几何筛选
+// 检测绿球候选：HSV 分割 -> 椭圆拟合 -> 圆度筛选
 std::vector<BallCandidate> detectBallCandidates(const cv::Mat & frame)
 {
   cv::Mat hsv;
@@ -308,58 +287,46 @@ std::vector<BallCandidate> detectBallCandidates(const cv::Mat & frame)
 
   for (const auto & contour : contours) {
     const double area = cv::contourArea(contour);
-    if (area < kMinArea || area > kMaxArea) {
+    if (area < kMinArea) {
+      continue;
+    }
+    if (contour.size() < 5) {
       continue;
     }
 
-    const double perimeter = cv::arcLength(contour, true);
-    if (perimeter <= 0.0) {
+    // fitEllipse 对轮廓做最小二乘椭圆拟合，同时给出圆心、长短轴与朝向。
+    const cv::RotatedRect ellipse = cv::fitEllipse(contour);
+    const float major = std::max(ellipse.size.width, ellipse.size.height);
+    const float minor = std::min(ellipse.size.width, ellipse.size.height);
+    const double roundness = (major > 0.0F) ? static_cast<double>(minor) / major : 0.0;
+
+    // 绿色圆柱是细长目标，椭圆短轴/长轴会明显小于正圆，这里直接排除。
+    if (roundness < kMinEllipseRoundness) {
       continue;
     }
 
-    const cv::Rect box = cv::boundingRect(contour);
-    if (box.height <= 0) {
-      continue;
-    }
+    const cv::Point2f center = ellipse.center;
+    const float radius = 0.25F * (major + minor);  // 长短轴平均值的一半 ≈ 圆半径
 
-    const double aspect_ratio = static_cast<double>(box.width) / box.height;
-    const double circularity = 4.0 * CV_PI * area / (perimeter * perimeter);
-    const bool near_border = isNearFrameBorder(box, frame.size());
+    const cv::Rect box(static_cast<int>(std::round(center.x - radius)),
+                       static_cast<int>(std::round(center.y - radius)),
+                       static_cast<int>(std::round(radius * 2.0F)),
+                       static_cast<int>(std::round(radius * 2.0F)));
 
-    // 圆度 + 长宽比区分绿球（圆）和绿色圆柱（细长）
-    if (near_border) {
-      if (circularity < kBorderMinCircularity || aspect_ratio < kBorderMinAspect ||
-          aspect_ratio > kBorderMaxAspect) {
-        continue;
-      }
-    } else {
-      if (circularity < kMinCircularity || aspect_ratio < kMinAspect ||
-          aspect_ratio > kMaxAspect) {
-        continue;
-      }
-    }
-
-    cv::Point2f center;
-    float radius = 0.0F;
-    cv::minEnclosingCircle(contour, center, radius);
-
-    candidates.push_back(BallCandidate{center, radius, area, circularity, aspect_ratio, box});
+    candidates.push_back(BallCandidate{center, radius, roundness, box});
   }
 
   return candidates;
 }
 
-// 形状打分：分数越高越像"球"
+// 形状打分：椭圆圆度为主，半径接近典型球尺寸为辅。
 double computeShapeScore(const BallCandidate & c)
 {
-  // 分数归一化到 [0, 1]；这些参数集中定义，避免和筛选阈值分散在不同位置。
-  const double circularity_score = std::clamp(
-    (c.circularity - kScoreCircularityStart) / kScoreCircularityRange, 0.0, 1.0);
-  const double aspect_score = std::clamp(
-    1.0 - std::abs(c.aspect_ratio - 1.0) / 0.20, 0.0, 1.0);
-  const double area_score = std::clamp(
-    1.0 - std::abs(c.area - kTargetArea) / kAreaScoreTolerance, 0.0, 1.0);
-  return 0.45 * circularity_score + 0.35 * aspect_score + 0.20 * area_score;
+  const double roundness_score = std::clamp(
+    (c.roundness - kMinEllipseRoundness) / (1.0 - kMinEllipseRoundness), 0.0, 1.0);
+  const double radius_score = std::clamp(
+    1.0 - std::abs(c.radius - kTypicalBallRadius) / kRadiusTolerance, 0.0, 1.0);
+  return 0.7 * roundness_score + 0.3 * radius_score;
 }
 
 // 从候选中选出最可能的目标：形状分 + 卡尔曼预测位置的连续性。
@@ -381,10 +348,10 @@ std::optional<BallCandidate> chooseBestCandidate(
     if (previous.initialized && predicted_center.has_value()) {
       // 用卡尔曼滤波器的先验预测位置计算距离，而不是简单地把上一帧位移加一次。
       const double distance = cv::norm(c.center - *predicted_center);
-      const double max_distance = std::max(previous.radius * 1.8, previous.speed * 3.5 + 35.0);
+      const double gate = std::max(previous.radius * 2.0, previous.speed * 3.0 + 40.0);
 
       // 距离预测位置太远，可能是误选了另一块绿色区域。
-      if (distance > max_distance) {
+      if (distance > gate) {
         continue;
       }
       score -= distance * kDistancePenalty;
