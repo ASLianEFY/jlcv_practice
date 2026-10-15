@@ -103,7 +103,6 @@ struct BallCandidate {
 struct BallTrack {
   cv::Point2f center;
   cv::Point2f velocity;         // 卡尔曼滤波估计的速度（像素/帧）
-  cv::Point2f smooth_velocity;  // 保留原字段名以兼容绘制代码；现在同样保存滤波后的速度
   float radius = 0.0F;
   double speed = 0.0;           // 卡尔曼滤波估计的速度大小（像素/帧）
   double confidence = 0.0;      // 检测置信度（0~1），来自形状打分
@@ -483,6 +482,16 @@ void drawTrail(cv::Mat & frame, const std::deque<cv::Point2f> & trail)
   }
 }
 
+// 追加一个轨迹点、裁剪到最近 kMaxTrail 帧，并绘制彗尾。
+void pushTrailPoint(cv::Mat & frame, std::deque<cv::Point2f> & trail, const cv::Point2f & p)
+{
+  trail.push_back(p);
+  if (trail.size() > kMaxTrail) {
+    trail.pop_front();
+  }
+  drawTrail(frame, trail);
+}
+
 // 绘制检测圆、速度箭头和状态文本
 void drawTrackOverlay(cv::Mat & frame, const BallTrack & current, const BallTrack & previous,
   double fps, int frame_index, bool predicted)
@@ -496,7 +505,7 @@ void drawTrackOverlay(cv::Mat & frame, const BallTrack & current, const BallTrac
   const double delta_pps = speed_pps - prev_speed_pps;
 
   // 只有速度和方向都可信时才画箭头；静止时不伪造一个向右的方向。
-  const cv::Point2f arrow = current.smooth_velocity;
+  const cv::Point2f arrow = current.velocity;
   const double arrow_norm = cv::norm(arrow);
   if (current.speed >= kMinArrowSpeed && arrow_norm > 1e-6) {
     const double len = std::clamp(current.speed * kArrowScale, kArrowMinLen, kArrowMaxLen);
@@ -658,14 +667,9 @@ int main(int argc, char ** argv)
 
       // 卡尔曼状态同时估计位置和速度，因此不再需要额外的 EMA 速度平滑。
       current.velocity = kalman_tracker.velocity();
-      current.smooth_velocity = current.velocity;
       current.speed = cv::norm(current.velocity);
 
-      trail.push_back(current.center);
-      if (trail.size() > kMaxTrail) {
-        trail.pop_front();
-      }
-      drawTrail(frame, trail);
+      pushTrailPoint(frame, trail, current.center);
       drawTrackOverlay(frame, current, previous, fps, frame_index, false);
       previous = current;
     } else if (previous.initialized && previous.lost_frames < kMaxLostFrames &&
@@ -676,7 +680,6 @@ int main(int argc, char ** argv)
       BallTrack predicted = previous;
       predicted.center = clampPointToFrame(*predicted_center, frame.size());
       predicted.velocity = kalman_tracker.velocity();
-      predicted.smooth_velocity = predicted.velocity;
       predicted.speed = cv::norm(predicted.velocity);
       predicted.bounding_box.x = static_cast<int>(std::round(predicted.center.x - predicted.radius));
       predicted.bounding_box.y = static_cast<int>(std::round(predicted.center.y - predicted.radius));
@@ -684,18 +687,14 @@ int main(int argc, char ** argv)
       predicted.bounding_box.height = static_cast<int>(std::round(predicted.radius * 2.0F));
       predicted.lost_frames = previous.lost_frames + 1;
 
-      trail.push_back(predicted.center);
-      if (trail.size() > kMaxTrail) {
-        trail.pop_front();
-      }
-      drawTrail(frame, trail);
+      pushTrailPoint(frame, trail, predicted.center);
       drawTrackOverlay(frame, predicted, previous, fps, frame_index, true);
       previous = predicted;
     } else {
       // 连续丢失超过允许帧数，清空轨迹并重置滤波器，避免长期错误外推。
       trail.clear();
       kalman_tracker.reset();
-      drawText(frame, "green ball lost", cv::Point(20, 36), 28, cv::Scalar(0, 0, 255), -1);
+      drawText(frame, "green ball lost", cv::Point(20, 36), 28, cv::Scalar(0, 0, 255), 2);
       previous = BallTrack{};
     }
 
