@@ -520,7 +520,7 @@ void drawTrackOverlay(cv::Mat & frame, const BallTrack & current, const BallTrac
   int text_y = 32;
 
   drawText(frame, "frame: " + std::to_string(frame_index),
-    cv::Point(kTextLeft, text_y), 22, cv::Scalar(255, 255, 255), -1);
+    cv::Point(kTextLeft, text_y), 22, cv::Scalar(255, 255, 255), 2);
   text_y += kTextLine;
 
   // 外推期间的速度只是沿用上次观测值；重获目标的第一帧也不计算跨越丢失区间的瞬时速度。
@@ -536,14 +536,14 @@ void drawTrackOverlay(cv::Mat & frame, const BallTrack & current, const BallTrac
     status_text = buildStatusText(speed_pps, delta_pps);
   }
   drawText(frame, status_text, cv::Point(kTextLeft, text_y), 24,
-    cv::Scalar(255, 255, 255), -1);
+    cv::Scalar(255, 255, 255), 2);
   text_y += kTextLine;
 
   // 球的大小标注（图像中的像素半径，不是现实世界长度）
   const std::string size_text =
     "r: " + std::to_string(static_cast<int>(std::round(current.radius))) + " px";
   drawText(frame, size_text, cv::Point(kTextLeft, text_y), 24,
-    cv::Scalar(255, 255, 0), -1);
+    cv::Scalar(255, 255, 0), 2);
 }
 
 }  // namespace
