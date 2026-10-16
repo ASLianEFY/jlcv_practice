@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
 
+
 def main():
     # 读取视频文件
-    video_path = 'homework.mp4'
+    video_path = "../../../homework.mp4"
     cap = cv2.VideoCapture(video_path)
-    
+
     if not cap.isOpened():
         print(f"无法打开视频文件: {video_path}")
         return
@@ -37,18 +38,18 @@ def main():
         for cnt in contours:
             area = cv2.contourArea(cnt)
             # 1. 面积太小直接跳过 (过滤噪点)
-            if area < 100: 
+            if area < 100:
                 continue
 
             # 2. 形状过滤：计算圆度
             # 获取最小外接圆
             (x, y), radius = cv2.minEnclosingCircle(cnt)
-            circle_area = np.pi * (radius ** 2)
-            
+            circle_area = np.pi * (radius**2)
+
             # 计算圆度 (轮廓面积 / 外接圆面积)
             # 完美圆形的圆度接近 1.0，圆柱体侧面会拉低这个值
             circularity = area / circle_area if circle_area > 0 else 0
-            
+
             # 只处理圆度大于 0.7 的轮廓 (说明它是个比较圆的球)
             if circularity > 0.7:
                 # 如果找到了圆球，计算它的质心
@@ -68,34 +69,43 @@ def main():
             if prev_center is not None:
                 dx = current_center[0] - prev_center[0]
                 dy = current_center[1] - prev_center[1]
-                
+
                 speed = np.sqrt(dx**2 + dy**2)
-                
+
                 # 移动速度阈值，太小就不画箭头了
                 if speed > 2.0:
-                    scale_factor = 3.0 # 箭头放大倍数
+                    scale_factor = 3.0  # 箭头放大倍数
                     end_point = (
                         int(current_center[0] + dx * scale_factor),
-                        int(current_center[1] + dy * scale_factor)
+                        int(current_center[1] + dy * scale_factor),
                     )
-                    
+
                     # 画箭头
-                    cv2.arrowedLine(frame, prev_center, end_point, (0, 0, 255), 2, tipLength=0.3)
-                    
+                    cv2.arrowedLine(
+                        frame, prev_center, end_point, (0, 0, 255), 2, tipLength=0.3
+                    )
+
                     # 显示速度
-                    cv2.putText(frame, f"Speed: {speed:.1f}", 
-                                (current_center[0] + 10, current_center[1] - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+                    cv2.putText(
+                        frame,
+                        f"Speed: {speed:.1f}",
+                        (current_center[0] + 10, current_center[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (0, 0, 255),
+                        1,
+                    )
 
             prev_center = current_center
 
-        cv2.imshow('Green Ball Tracking', frame)
+        cv2.imshow("Green Ball Tracking", frame)
 
-        if cv2.waitKey(30) & 0xFF == ord('q'):
+        if cv2.waitKey(30) & 0xFF == ord("q"):
             break
 
     cap.release()
     cv2.destroyAllWindows()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
