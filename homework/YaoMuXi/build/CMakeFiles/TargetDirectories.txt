@@ -1,4 +1,0 @@
-/home/cheap1777/Desktop/YaoMuXi/build/CMakeFiles/rm_ball_tracker.dir
-/home/cheap1777/Desktop/YaoMuXi/build/CMakeFiles/test.dir
-/home/cheap1777/Desktop/YaoMuXi/build/CMakeFiles/edit_cache.dir
-/home/cheap1777/Desktop/YaoMuXi/build/CMakeFiles/rebuild_cache.dir
