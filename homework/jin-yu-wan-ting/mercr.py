@@ -127,4 +127,4 @@ def track_green_ball(video_path):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    track_green_ball("first-homework.mp4")
+    track_green_ball("homework.mp4")
