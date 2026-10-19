@@ -163,6 +163,34 @@ def test_recovery_gate_sets_adaptive_q() -> None:
     assert tracker.q_scale == 1.0
 
 
+def test_direction_reversal_is_not_rejected() -> None:
+    """Camera reversals create huge innovations; the ball must still be kept.
+
+    Regression for frames ~401-406 of homework.mp4, where the image motion
+    reversed and a hard Mahalanobis gate rejected the true ball.
+    """
+    cfg = Config()
+    tracker = KalmanTracker(cfg, 100.0, 100.0, 20.0, DT)
+    y = 100.0
+    for _ in range(20):
+        y += 10.0
+        tracker.predict()
+        chosen, recovery = tracker.associate([cand(100.0, y)])
+        assert chosen is not None
+        tracker.update(chosen, recovery)
+
+    # The apparent motion reverses sharply (20 px/frame upwards).
+    for _ in range(10):
+        y -= 20.0
+        tracker.predict()
+        chosen, recovery = tracker.associate([cand(100.0, y)])
+        assert chosen is not None, "reversed motion must not be rejected"
+        tracker.update(chosen, recovery)
+
+    assert tracker.status == "detected"
+    assert abs(tracker.position()[1] - y) < 10.0
+
+
 def test_arrow_ready_needs_enough_updates() -> None:
     cfg = Config()
     tracker = KalmanTracker(cfg, 100.0, 100.0, 20.0, DT)

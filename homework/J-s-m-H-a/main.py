@@ -66,14 +66,13 @@ class Config:
     meas_noise_px: float = 3.0
     accel_noise: float = 500.0
     mahalanobis_gate: float = 9.21
-    euclid_radius_factor: float = 1.5
+    euclid_radius_factor: float = 2.5
     euclid_motion_factor: float = 1.5
     euclid_extra_px: float = 10.0
     radius_consistency: float = 0.30
     hits_required: int = 2
     max_misses: int = 5
     adaptive_q_factor: float = 4.0
-    mahalanobis_recovery_factor: float = 2.7
     radius_ema_alpha: float = 0.3
 
     # --- 6. speed gating -----------------------------------------------------
@@ -503,33 +502,32 @@ class KalmanTracker:
     ) -> tuple[Candidate | None, bool]:
         """Pick the best gated candidate.
 
-        Returns ``(candidate, recovery)``.  A strict Mahalanobis gate is tried
-        first; if nothing passes, a relaxed recovery gate is tried and the
-        caller should scale Q on the next prediction (adaptive Q).
+        The **Euclidean gate** is the hard association gate: it is sized to
+        the search ROI (``2.5 * r``).  The Mahalanobis distance ranks the
+        remaining candidates and marks a ``recovery`` frame (``d^2`` above the
+        threshold), which scales Q on the next prediction.
+
+        A hard Mahalanobis gate would reject the true ball when a hand-held
+        camera reverses the apparent direction: the constant-velocity prior
+        points the wrong way and the innovation is legitimately large.  Shape,
+        radius consistency and the Euclidean gate already reject the green
+        cylinder, so the Mahalanobis gate is deliberately soft here.
         """
         gate_e = self.euclidean_gate()
-        strict: list[tuple[float, Candidate]] = []
-        recovery: list[tuple[float, Candidate]] = []
+        accepted: list[tuple[float, Candidate]] = []
 
         for candidate in candidates:
             if abs(candidate.r - self.r) > self.cfg.radius_consistency * self.r:
                 continue
             d2, euclid = self._innovation_stats(candidate)
-            if d2 <= self.cfg.mahalanobis_gate and euclid <= gate_e:
-                strict.append((d2, candidate))
-            elif (
-                d2
-                <= self.cfg.mahalanobis_recovery_factor
-                * self.cfg.mahalanobis_gate
-                and euclid <= 2.0 * gate_e
-            ):
-                recovery.append((d2, candidate))
+            if euclid <= gate_e:
+                accepted.append((d2, candidate))
 
-        if strict:
-            return min(strict, key=lambda item: item[0])[1], False
-        if recovery:
-            return min(recovery, key=lambda item: item[0])[1], True
-        return None, False
+        if not accepted:
+            return None, False
+
+        d2, candidate = min(accepted, key=lambda item: item[0])
+        return candidate, d2 > self.cfg.mahalanobis_gate
 
     # -- correction / lifecycle ---------------------------------------------
     def update(self, candidate: Candidate, recovery: bool = False) -> None:
