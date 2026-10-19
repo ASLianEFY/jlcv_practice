@@ -1,0 +1,5 @@
+# 运行产物不入库
+out.mp4
+*.csv
+__pycache__/
+*.pyc
