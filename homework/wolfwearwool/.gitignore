@@ -1,7 +1,0 @@
-# 运行生成的结果视频，不入库（用脚本可重新生成）
-green_ball_annotated.mp4
-*.avi
-
-# Python 缓存
-__pycache__/
-*.pyc
