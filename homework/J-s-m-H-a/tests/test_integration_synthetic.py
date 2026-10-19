@@ -7,7 +7,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from main import Config, run_pipeline
+from greenball.config import Config
+from greenball.pipeline import run_pipeline
 
 GREEN = (60, 180, 80)
 BACKGROUND = (100, 120, 140)

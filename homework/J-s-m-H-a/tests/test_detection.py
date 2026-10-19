@@ -5,7 +5,8 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-from main import Config, below_green_ratio, detect_candidates
+from greenball.config import Config
+from greenball.detection import below_green_ratio, detect_candidates
 
 GREEN = (60, 180, 80)
 RED = (40, 40, 200)

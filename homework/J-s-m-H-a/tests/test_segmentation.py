@@ -5,7 +5,8 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-from main import Config, clamp_roi, green_mask
+from greenball.config import Config
+from greenball.segmentation import clamp_roi, green_mask
 
 GREEN = (60, 180, 80)  # BGR -> H~70, S~170, V~180
 RED = (40, 40, 200)

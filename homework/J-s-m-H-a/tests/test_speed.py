@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from main import (
-    Config,
-    KalmanTracker,
+from greenball.config import Config
+from greenball.speed import (
     arrow_visible,
     clamp_speed,
     display_speed,
     speed_text,
 )
+from greenball.tracking import KalmanTracker
 
 DT = 1.0 / 30.0
 

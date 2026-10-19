@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 import pytest
 
-from main import (
+from greenball.export import (
     CSV_COLUMNS,
     FrameRow,
     make_contact_sheet,

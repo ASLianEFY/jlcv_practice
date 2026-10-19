@@ -14,7 +14,9 @@ from pathlib import Path
 import cv2
 import pytest
 
-from main import Config, PipelineStats, FrameRow, run_pipeline
+from greenball.config import Config
+from greenball.export import FrameRow, PipelineStats
+from greenball.pipeline import run_pipeline
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 VIDEO = REPO_ROOT / "homework.mp4"

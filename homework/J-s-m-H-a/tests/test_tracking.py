@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from main import Candidate, Config, KalmanTracker
+from greenball.config import Config
+from greenball.detection import Candidate
+from greenball.tracking import KalmanTracker
 
 DT = 1.0 / 30.0
 

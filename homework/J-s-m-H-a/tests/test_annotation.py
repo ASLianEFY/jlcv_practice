@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from main import Config, KalmanTracker, arrow_length, dash_segments, draw_annotation
+from greenball.annotation import arrow_length, dash_segments, draw_annotation
+from greenball.config import Config
+from greenball.tracking import KalmanTracker
 
 DT = 1.0 / 30.0
 GREEN = (60, 180, 80)
