@@ -4,19 +4,16 @@
 
 任务：识别视频 homework.mp4 中的绿色小球，画圆框标位置，
       用箭头标注运动方向和速度（箭头方向 = 运动方向，长度 ∝ 速度大小）。
-修复：1）突变检测死锁——连续多帧突变时接受新速度并重置，避免追踪无法恢复；
-      2）丢帧速度错误——记录帧索引，按实际时间间隔算速度，不再假设固定帧 gap。
+修复：1）突变检测死锁；2）丢帧速度错误。
 
 核心思路：
-    1. HSV 颜色分割：BGR 转 HSV，按绿色色相提取绿色区域。
-    2. 形态学去噪：开运算去小噪点，闭运算补小黑洞。
-    3. 轮廓筛选：按面积、圆度（4πA/P²）、长宽比，把绿球和绿色圆柱区分开。
-    4. 实际时间速度：用当前位置和上一帧有效位置的实际帧差算速度，丢帧也正确。
-    5. 指数平滑：新速度 = α×瞬时速度 + (1−α)×上一帧平滑速度，避免箭头抖。
-    6. 自适应突变检测：预测本帧位置，偏差过大时判定突变；单帧突变缓慢更新，
-       连续多帧突变则接受新速度并重置（防止急掉头后追踪死锁）。
-    7. 绘制标注：用外接圆实际半径画绿色圆框；红色箭头起点是球心，终点是
-       球心 + 平滑速度向量 × 缩放系数。
+    1. HSV 颜色分割提取绿色区域
+    2. 形态学去噪
+    3. 按面积 + 圆度 + 长宽比，把绿球和绿色圆柱区分开
+    4. 按实际帧差算瞬时速度，丢帧也正确
+    5. 指数平滑速度，避免箭头抖动
+    6. 自适应突变检测：单帧突变缓慢更新，连续多帧突变则接受新速度并重置，避免死锁
+    7. 用外接圆实际半径画圆框；红色箭头方向 = 速度方向，长度 ∝ 速度大小
 
 运行（在仓库根目录 jlcv_practice/ 下）：
     python3 homework/week1-git-and-cpp/SWJ/green_ball_tracker.py
@@ -29,13 +26,13 @@ import math
 import os
 
 # ----------------------------------------------------------------------
-# 0. 路径：自动定位到仓库根目录的 homework.mp4
+# 0. 路径
 # ----------------------------------------------------------------------
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 VIDEO_PATH = os.path.join(REPO_ROOT, "homework.mp4")
 
 # ----------------------------------------------------------------------
-# 1. 颜色分割参数
+# 1. 颜色分割参数（HSV 绿色范围）
 # ----------------------------------------------------------------------
 GREEN_LOWER = np.array([35, 40, 40])
 GREEN_UPPER = np.array([90, 255, 255])
@@ -44,22 +41,22 @@ KERNEL = np.ones((5, 5), np.uint8)
 # ----------------------------------------------------------------------
 # 2. 轮廓筛选参数（把绿球和绿色圆柱区分开）
 # ----------------------------------------------------------------------
-AREA_MIN = 5000.0      # 小于此面积的轮廓当作噪声丢弃
-AREA_MAX = 25000.0     # 大于此面积当作圆柱丢弃（放宽到 25000 避免漏检大球）
-CIRC_MIN = 0.60        # 圆度 = 4π × 面积 / 周长²，正圆等于 1，越不规则越小
-ASPECT_MIN = 0.80      # 长宽比下限
-ASPECT_MAX = 1.40      # 长宽比上限（贴边时球被切掉一部分会变扁）
+AREA_MIN = 5000.0
+AREA_MAX = 25000.0
+CIRC_MIN = 0.60      # 圆度，越接近 1 越像正圆
+ASPECT_MIN = 0.80    # 长宽比下限
+ASPECT_MAX = 1.40    # 长宽比上限（贴边时球会变扁）
 
 # ----------------------------------------------------------------------
 # 3. 平滑与突变检测参数
 # ----------------------------------------------------------------------
-ALPHA_NORMAL = 0.5     # 正常时的指数平滑系数，越大越灵敏但越抖
-ALPHA_BURST = 0.15     # 突变时的缓慢更新系数，用于急掉头的平滑过渡
-BURST_LIMIT = 3        # 连续多少帧突变后重置速度，避免追踪死锁
-DISP_THRESHOLD = 40.0  # 突变检测阈值（像素），实际与预测偏差超过则判定突变
-ARROW_SCALE = 0.15     # 箭头像素长度 = 速度 × 此系数，越小箭头越短
-ARROW_MAX_LEN = 100    # 箭头最大长度（像素），防止速度突变导致箭头飞出画面
-MIN_SPEED = 50.0       # 低于此速度不画箭头，避免球静止时箭头乱抖
+ALPHA_NORMAL = 0.5   # 正常指数平滑系数
+ALPHA_BURST = 0.15   # 突变时缓慢更新系数
+BURST_LIMIT = 3      # 连续多少帧突变后重置速度，避免死锁
+DISP_THRESHOLD = 40.0  # 突变检测阈值（像素）
+ARROW_SCALE = 0.15   # 箭头长度系数
+ARROW_MAX_LEN = 100  # 箭头最大长度
+MIN_SPEED = 50.0     # 低于此速度不画箭头
 
 
 def find_green_ball(frame):
@@ -109,9 +106,9 @@ def main():
 
     prev_center = None      # 上一帧有效球心
     prev_frame_idx = None   # 上一帧有效帧号
-    smooth_vx = 0.0         # 平滑速度 x 分量
-    smooth_vy = 0.0         # 平滑速度 y 分量
-    burst_count = 0         # 连续突变计数器
+    smooth_vx = 0.0         # 平滑速度 x
+    smooth_vy = 0.0         # 平滑速度 y
+    burst_count = 0         # 连续突变计数
     frame_idx = 0           # 当前帧号
 
     while True:
@@ -121,11 +118,12 @@ def main():
 
         result = find_green_ball(frame)
 
+        # ---------------- 有球时：算速度 + 突变检测 ----------------
         if result is not None:
             cx, cy, radius = result
 
             if prev_center is not None:
-                # 用实际帧差算瞬时速度，丢帧时 dt_frames > 1，速度仍正确
+                # 按实际帧差算瞬时速度，丢帧时 dt_frames > 1，速度仍正确
                 dt_frames = frame_idx - prev_frame_idx
                 if dt_frames > 0:
                     instant_vx = (cx - prev_center[0]) * fps / dt_frames
@@ -134,7 +132,7 @@ def main():
                     instant_vx = 0.0
                     instant_vy = 0.0
 
-                # 自适应突变检测：用上一帧平滑速度预测本帧位置（按实际时间）
+                # 用上一帧平滑速度预测本帧位置，偏差过大则判定突变
                 pred_cx = prev_center[0] + smooth_vx * dt_frames / fps
                 pred_cy = prev_center[1] + smooth_vy * dt_frames / fps
                 err = math.hypot(cx - pred_cx, cy - pred_cy)
@@ -151,21 +149,21 @@ def main():
                         smooth_vy = instant_vy
                         burst_count = 0
                     else:
-                        # 单帧突变（可能急掉头）：缓慢更新，避免箭头卡住
+                        # 单帧突变：缓慢更新，避免箭头卡住
                         smooth_vx = ALPHA_BURST * instant_vx + (1.0 - ALPHA_BURST) * smooth_vx
                         smooth_vy = ALPHA_BURST * instant_vy + (1.0 - ALPHA_BURST) * smooth_vy
 
             prev_center = (cx, cy)
             prev_frame_idx = frame_idx
-        # 丢帧时：prev_center / prev_frame_idx 不更新，下次捕获时 dt_frames 会反映实际间隔
+        # 丢帧时：状态都不更新，下次捕获时 dt_frames 会反映实际间隔
 
         # ---------------- 绘制标注 ----------------
         if result is not None:
             cx, cy, radius = result
             cx, cy = int(cx), int(cy)
             r = max(int(radius), 10)
-            cv2.circle(frame, (cx, cy), r, (0, 255, 0), 2)   # 绿色圆框
-            cv2.circle(frame, (cx, cy), 5, (0, 255, 0), -1)  # 质心点
+            cv2.circle(frame, (cx, cy), r, (0, 255, 0), 2)      # 绿色圆框
+            cv2.circle(frame, (cx, cy), 5, (0, 255, 0), -1)     # 质心点
 
             speed = math.hypot(smooth_vx, smooth_vy)
             if speed > MIN_SPEED:
@@ -176,7 +174,7 @@ def main():
                 dy = smooth_vy / speed * length
                 end_x = int(cx + dx)
                 end_y = int(cy + dy)
-                cv2.arrowedLine(frame, (cx, cy), (end_x, end_y), (0, 0, 255), 3)
+                cv2.arrowedLine(frame, (cx, cy), (end_x, end_y), (0, 0, 255), 3)  # 红色箭头
 
             cv2.putText(frame, f"{speed:.0f} px/s", (cx + 25, cy),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
