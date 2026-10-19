@@ -19,6 +19,7 @@ Only section 1 and 9 exist in this commit; later commits fill in the rest.
 from __future__ import annotations
 
 import argparse
+import csv
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -106,6 +107,7 @@ class Config:
     sample_frames: tuple[int, ...] = (0, 90, 180, 270, 360, 435)
     contact_sheet_frames: int = 16
     contact_sheet_cols: int = 4
+    contact_tile_size: tuple[int, int] = (320, 180)
     fps_fallback: float = 30.0
 
 
@@ -879,6 +881,363 @@ def draw_annotation(
 # =============================================================================
 # 8. Export
 # =============================================================================
+CSV_COLUMNS = (
+    "frame",
+    "time_s",
+    "cx",
+    "cy",
+    "r",
+    "vx",
+    "vy",
+    "speed_px_s",
+    "status",
+)
+
+
+@dataclass
+class FrameRow:
+    """One CSV row (one video frame)."""
+
+    frame: int
+    time_s: float
+    cx: float
+    cy: float
+    r: float
+    vx: float
+    vy: float
+    speed_px_s: float
+    status: str
+
+
+@dataclass
+class PipelineStats:
+    """Aggregate numbers printed at the end of a run."""
+
+    frames: int
+    detected: int
+    predicted: int
+    lost: int
+    detection_rate: float
+    max_lost_streak: int
+    speed_median: float
+    speed_p90: float
+    output_video: str
+
+
+def write_csv(path: Path, rows: list[FrameRow]) -> None:
+    """Write the per-frame CSV (``nan`` for lost frames)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(CSV_COLUMNS)
+        for row in rows:
+            writer.writerow(
+                [
+                    row.frame,
+                    f"{row.time_s:.3f}",
+                    f"{row.cx:.2f}",
+                    f"{row.cy:.2f}",
+                    f"{row.r:.2f}",
+                    f"{row.vx:.2f}",
+                    f"{row.vy:.2f}",
+                    f"{row.speed_px_s:.2f}",
+                    row.status,
+                ]
+            )
+
+
+def open_writer(
+    path: Path, fps: float, size: tuple[int, int]
+) -> tuple[cv2.VideoWriter, Path]:
+    """Open an MP4 writer, falling back to XVID/AVI when necessary."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise RuntimeError(f"cannot create output directory: {path.parent}") from exc
+
+    writer = cv2.VideoWriter(
+        str(path), cv2.VideoWriter_fourcc(*"mp4v"), fps, size
+    )
+    if writer.isOpened():
+        return writer, path
+    writer.release()
+
+    fallback = path.with_suffix(".avi")
+    writer = cv2.VideoWriter(
+        str(fallback), cv2.VideoWriter_fourcc(*"XVID"), fps, size
+    )
+    if writer.isOpened():
+        return writer, fallback
+    writer.release()
+    raise RuntimeError(
+        f"cannot open a video writer for {path} (mp4v and XVID both failed)"
+    )
+
+
+def make_contact_sheet(
+    frames: list[np.ndarray],
+    cols: int,
+    tile_size: tuple[int, int],
+) -> np.ndarray:
+    """Tile annotated frames into a single review image."""
+    if not frames:
+        return np.zeros((0, 0, 3), np.uint8)
+    width, height = tile_size
+    rows = (len(frames) + cols - 1) // cols
+    sheet = np.full((rows * height, cols * width, 3), 255, np.uint8)
+    for index, frame in enumerate(frames):
+        tile = cv2.resize(frame, (width, height))
+        row, col = divmod(index, cols)
+        sheet[
+            row * height : (row + 1) * height,
+            col * width : (col + 1) * width,
+        ] = tile
+    return sheet
+
+
+def sample_frame_path(out_dir: Path, index: int) -> Path:
+    return out_dir / "frames" / f"frame_{index:04d}.png"
+
+
+def _save_debug(
+    out_dir: Path,
+    frame: np.ndarray,
+    mask: np.ndarray,
+    candidates: list[Candidate],
+    roi: tuple[int, int, int, int] | None,
+    index: int,
+) -> None:
+    debug_dir = out_dir / "debug"
+    debug_dir.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(debug_dir / f"mask_{index:04d}.png"), mask)
+
+    overlay = frame.copy()
+    if roi is not None:
+        cv2.rectangle(
+            overlay,
+            (int(roi[0]), int(roi[1])),
+            (int(roi[2]), int(roi[3])),
+            (255, 0, 0),
+            1,
+        )
+    for candidate in candidates:
+        cv2.circle(
+            overlay,
+            (int(round(candidate.cx)), int(round(candidate.cy))),
+            int(round(candidate.r)),
+            (0, 0, 255),
+            1,
+        )
+    cv2.imwrite(str(debug_dir / f"candidates_{index:04d}.png"), overlay)
+
+    lines = [f"roi={roi}"]
+    for candidate in candidates:
+        lines.append(
+            f"{candidate.source} c=({candidate.cx:.1f},{candidate.cy:.1f}) "
+            f"r={candidate.r:.1f} score={candidate.score:.3f} "
+            f"below={candidate.below_green:.2f}"
+        )
+    (debug_dir / f"info_{index:04d}.txt").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8"
+    )
+
+
+def _track_frame(
+    frame: np.ndarray,
+    tracker: KalmanTracker | None,
+    cfg: Config,
+    dt: float,
+) -> tuple[KalmanTracker | None, list[Candidate], tuple[int, int, int, int] | None]:
+    """Advance the tracker by one frame; returns tracker, candidates, ROI."""
+    if tracker is None:
+        candidates = detect_candidates(frame, cfg)
+        if candidates:
+            best = candidates[0]
+            tracker = KalmanTracker(
+                cfg, best.cx, best.cy, best.r, dt
+            )
+        return tracker, candidates, None
+
+    tracker.predict()
+    roi = tracker.roi()
+    candidates = detect_candidates(
+        frame, cfg, roi=roi, r_hint=tracker.r
+    )
+    chosen, recovery = tracker.associate(candidates)
+    if chosen is not None:
+        tracker.update(chosen, recovery)
+    else:
+        tracker.mark_miss()
+        if tracker.status == "lost":
+            candidates = detect_candidates(frame, cfg, r_hint=tracker.r)
+            if candidates:
+                best = candidates[0]
+                tracker.reacquire(best.cx, best.cy, best.r)
+    return tracker, candidates, roi
+
+
+def run_pipeline(
+    video_path: Path,
+    out_dir: Path,
+    cfg: Config,
+    no_frames: bool = False,
+    trail: bool = False,
+    debug: bool = False,
+) -> tuple[PipelineStats, list[FrameRow]]:
+    """Run detection, tracking, annotation and export for one video."""
+    capture = cv2.VideoCapture(str(video_path))
+    if not capture.isOpened():
+        raise FileNotFoundError(f"cannot open video: {video_path}")
+
+    fps = float(capture.get(cv2.CAP_PROP_FPS)) or cfg.fps_fallback
+    frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    dt = 1.0 / fps
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    writer, video_out = open_writer(
+        out_dir / "annotated.mp4", fps, (width, height)
+    )
+
+    if frame_count > 0 and not no_frames:
+        contact_indices = {
+            int(round(value))
+            for value in np.linspace(
+                0, max(0, frame_count - 1), cfg.contact_sheet_frames
+            )
+        }
+    else:
+        contact_indices = set()
+
+    tracker: KalmanTracker | None = None
+    trail_buffer: list[tuple[float, float]] = []
+    rows: list[FrameRow] = []
+    contact_frames: list[np.ndarray] = []
+    speeds: list[float] = []
+    counts = {"detected": 0, "predicted": 0, "lost": 0}
+    lost_streak = 0
+    max_lost_streak = 0
+    index = 0
+
+    while True:
+        ok, frame = capture.read()
+        if not ok:
+            break
+
+        tracker, candidates, roi = _track_frame(frame, tracker, cfg, dt)
+
+        if tracker is None:
+            status = "lost"
+            cx = cy = r = vx = vy = speed = float("nan")
+            _draw_text_panel(frame, "v = --", cfg)
+            trail_buffer.clear()
+        else:
+            status = tracker.status
+            if status == "lost":
+                cx = cy = r = vx = vy = speed = float("nan")
+                trail_buffer.clear()
+            else:
+                cx, cy = tracker.position()
+                r = tracker.r
+                vx, vy = tracker.velocity()
+                speed = float(np.hypot(vx, vy))
+                speeds.append(speed)
+                trail_buffer.append((cx, cy))
+                if len(trail_buffer) > cfg.trail_length:
+                    trail_buffer = trail_buffer[-cfg.trail_length :]
+            draw_annotation(
+                frame,
+                tracker,
+                cfg,
+                trail_points=trail_buffer if trail else None,
+            )
+
+        counts[status] += 1
+        if status == "lost":
+            lost_streak += 1
+            max_lost_streak = max(max_lost_streak, lost_streak)
+        else:
+            lost_streak = 0
+
+        rows.append(
+            FrameRow(
+                frame=index,
+                time_s=index / fps,
+                cx=cx,
+                cy=cy,
+                r=r,
+                vx=vx,
+                vy=vy,
+                speed_px_s=speed,
+                status=status,
+            )
+        )
+
+        if not no_frames and index in cfg.sample_frames:
+            path = sample_frame_path(out_dir, index)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(str(path), frame)
+
+        if not no_frames and index in contact_indices:
+            contact_frames.append(frame.copy())
+
+        if debug and index in cfg.sample_frames:
+            _save_debug(
+                out_dir,
+                frame,
+                green_mask(frame, cfg),
+                candidates,
+                roi,
+                index,
+            )
+
+        writer.write(frame)
+        index += 1
+
+    capture.release()
+    writer.release()
+
+    write_csv(out_dir / "speed.csv", rows)
+
+    if not no_frames and contact_frames:
+        sheet = make_contact_sheet(
+            contact_frames, cfg.contact_sheet_cols, cfg.contact_tile_size
+        )
+        cv2.imwrite(str(out_dir / "contact_sheet.png"), sheet)
+
+    speed_array = np.array(speeds, dtype=float) if speeds else np.zeros(1)
+    stats = PipelineStats(
+        frames=len(rows),
+        detected=counts["detected"],
+        predicted=counts["predicted"],
+        lost=counts["lost"],
+        detection_rate=counts["detected"] / max(1, len(rows)),
+        max_lost_streak=max_lost_streak,
+        speed_median=float(np.median(speed_array)),
+        speed_p90=float(np.percentile(speed_array, 90)),
+        output_video=str(video_out),
+    )
+
+    print(
+        "frames={frames} detected={detected} predicted={predicted} "
+        "lost={lost} detection_rate={rate:.1%} max_lost_streak={streak}".format(
+            frames=stats.frames,
+            detected=stats.detected,
+            predicted=stats.predicted,
+            lost=stats.lost,
+            rate=stats.detection_rate,
+            streak=stats.max_lost_streak,
+        )
+    )
+    print(
+        "speed px/s: median={median:.1f} p90={p90:.1f}".format(
+            median=stats.speed_median, p90=stats.speed_p90
+        )
+    )
+    print(f"output: {stats.output_video}")
+
+    return stats, rows
 
 
 # =============================================================================
@@ -920,11 +1279,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Entry point.  The pipeline is filled in by later commits."""
+    """Entry point: parse arguments and run the pipeline."""
     args = parse_args(argv)
-    print("week1 green ball tracker: pipeline not implemented yet")
-    print(f"video={args.video}")
-    print(f"out_dir={args.out_dir}")
+    if not args.video.exists():
+        print(f"error: video not found: {args.video}")
+        return 1
+    run_pipeline(
+        args.video,
+        args.out_dir,
+        Config(),
+        no_frames=args.no_frames,
+        trail=args.trail,
+        debug=args.debug,
+    )
     return 0
 
 
