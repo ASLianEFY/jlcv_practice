@@ -1,4 +1,8 @@
-"""U6: CSV schema, contact sheet, sample naming and writer checks."""
+"""U6 — 导出与写入检查测试。
+
+覆盖 CSV 字段/nan 行、审核拼图尺寸、抽样帧命名、VideoWriter 打开与
+失败报错；对应 PLAN §8 U6。
+"""
 
 from __future__ import annotations
 

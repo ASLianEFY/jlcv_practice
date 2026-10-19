@@ -1,4 +1,8 @@
-"""I7: full CLI pipeline on a synthetic video with a known trajectory."""
+"""I7 — 合成视频端到端测试。
+
+生成 60 帧、绿球已知轨迹 + 绿色圆柱干扰的合成视频，跑完整管线，断言
+检测率、速度误差、CSV 行数与输出视频可读；对应 PLAN §8 I7。
+"""
 
 from __future__ import annotations
 

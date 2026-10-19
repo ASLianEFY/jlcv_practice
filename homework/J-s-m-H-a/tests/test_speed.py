@@ -1,4 +1,8 @@
-"""U4: speed clamp, early suppression and HUD text."""
+"""U4 — 速度门控测试。
+
+覆盖速度 clamp、最低速度阈值、过早速度抑制、预测/丢失状态文本；
+对应 PLAN §8 U4。
+"""
 
 from __future__ import annotations
 

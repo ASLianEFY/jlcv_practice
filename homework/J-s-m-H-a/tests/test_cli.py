@@ -1,4 +1,8 @@
-"""C2 smoke test: the CLI entry point is importable and --help works."""
+"""C2 — CLI 冒烟测试。
+
+验证 main.py 可执行、--help 正常退出，并列出 --video / --out-dir /
+--no-frames / --trail / --debug 参数。
+"""
 
 from __future__ import annotations
 

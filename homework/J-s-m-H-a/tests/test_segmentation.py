@@ -1,4 +1,7 @@
-"""U1: HSV segmentation, opening and ROI behaviour."""
+"""U1 — 绿色区域分割测试。
+
+覆盖 HSV 阈值、3×3 开运算去噪、ROI 限制、二值掩码；对应 PLAN §8 U1。
+"""
 
 from __future__ import annotations
 

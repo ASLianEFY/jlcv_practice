@@ -1,8 +1,8 @@
-"""I8/I9: real-video acceptance metrics and hand-checked ball centres.
+"""I8/I9 — 真实视频验收与真值回归测试。
 
-The ground-truth fixture was produced by the pipeline, then every centre was
-visually checked against a crosshair overlay; it is a regression fixture, not
-an independent annotation.
+I8 检查 473 帧、检测率、最长连续丢失、输出视频参数与 CSV 行数；
+I9 用 12 帧人工十字线核对过的球心做回归（容差 10 px）。
+真值文件来自管线输出后的人工核对，属于回归 fixture，不是独立标注。
 """
 
 from __future__ import annotations

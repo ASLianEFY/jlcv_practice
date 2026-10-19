@@ -1,4 +1,8 @@
-"""U5: arrow length mapping, draw order, dashed predictions and HUD."""
+"""U5 — 标注绘制测试。
+
+覆盖箭头长度映射、球心锚定与绘制顺序（箭头在球上层）、灰色虚线预测、
+丢失帧不画箭头、轨迹线与 HUD；对应 PLAN §8 U5。
+"""
 
 from __future__ import annotations
 

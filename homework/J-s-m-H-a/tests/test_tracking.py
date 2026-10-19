@@ -1,4 +1,8 @@
-"""U3: Kalman tracking, gating, hits/misses, loss and reacquisition."""
+"""U3 — Kalman 跟踪测试。
+
+覆盖匀速/反向/加速轨迹、连续丢失与重捕获、hits/misses、欧氏硬门控、
+Mahalanobis 排序/自适应 Q、镜头反向回归；对应 PLAN §8 U3。
+"""
 
 from __future__ import annotations
 

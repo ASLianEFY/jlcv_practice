@@ -1,4 +1,8 @@
-"""U2: ball-vs-cylinder discrimination, Hough fallback and radius adaptivity."""
+"""U2 — 绿球候选筛选与圆柱区分测试。
+
+覆盖球 vs 竖长圆柱、球位于圆柱前方、粘连时 Hough 兜底、半径自适应、
+下方绿色占比、ROI 限制；对应 PLAN §8 U2。
+"""
 
 from __future__ import annotations
 
