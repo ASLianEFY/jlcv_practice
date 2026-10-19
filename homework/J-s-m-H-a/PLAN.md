@@ -127,7 +127,17 @@ homework/J-s-m-H-a/
 ├── README.md
 ├── requirements.txt          # opencv-python-headless, numpy（固定版本）
 ├── requirements-dev.txt      # -r requirements.txt, pytest
-├── main.py                   # 单文件，按分隔注释分 9 个部分
+├── main.py                   # 仅 CLI：参数解析与入口
+├── greenball/                # 按功能拆分的实现
+│   ├── __init__.py
+│   ├── config.py             # Config、默认路径
+│   ├── segmentation.py       # HSV 分割、开运算、ROI
+│   ├── detection.py          # 候选筛选、圆柱区分、Hough 兜底
+│   ├── tracking.py           # Kalman 跟踪、门限、丢失/重捕获
+│   ├── speed.py              # 速度 clamp、HUD 文本
+│   ├── annotation.py         # 圆框、箭头、文本、轨迹
+│   ├── export.py             # 视频/CSV/抽样帧/拼图/调试
+│   └── pipeline.py           # 逐帧管线与统计
 ├── tests/
 │   ├── fixtures/ball_centers.csv   # 12 帧人工核对真值
 │   ├── test_segmentation.py
@@ -141,7 +151,7 @@ homework/J-s-m-H-a/
 └── output/                   # 生成物，git 忽略
 ```
 
-> 代码结构：单文件 `main.py`（约 250–320 行），用醒目分隔注释划分为：配置、视频 I/O、绿色分割、候选筛选、Kalman 跟踪、速度门控、标注、导出、CLI；每个部分有 docstring。
+> 代码结构：`main.py` 仅保留 CLI；实现按功能拆分到 `greenball/` 包，每个模块有 docstring，说明职责与关键假设。测试文件开头也标明对应的测试编号与覆盖范围。
 
 ## 6. 提交计划（共 11 次提交：10 个计划步骤 + 1 次验证修复）
 
@@ -160,6 +170,11 @@ homework/J-s-m-H-a/
 | C10 | `docs(week1): 补充验证结果与运行示例` | README 结果与示例 | 全量 pytest + 人工审核 |
 
 约束：每个提交必须"改了什么 + 由哪个测试证明"且测试通过；参数/行为修改单独提交；提交信息用中文 + `类型(范围): 描述`。
+
+> Review 后追加（2026-10-19）：
+> - `refactor(week1): 按功能拆分 main.py 为 greenball 包`
+> - `test(week1): 为测试文件补充功能说明`
+> - `docs(week1): 更新模块结构说明`
 
 ## 7. 里程碑与审核检查点
 
@@ -252,7 +267,7 @@ gh pr create --repo ASLianEFY/jlcv_practice --base main \
 
 ## 12. 已确认事项
 
-- 代码结构：单文件 `main.py`，分隔注释 + docstring。
+- 代码结构：`main.py` 仅 CLI；功能拆分到 `greenball/` 包（config、segmentation、detection、tracking、speed、annotation、export、pipeline），每个模块带 docstring；测试文件开头标明功能与覆盖范围。
 - 检测率：全片 473 帧统计 ≥95%，硬性验收线。
 - 跟踪：Kalman 完全取代 EMA（K1 a）。
 - 箭头：方案 a——球心锚定，`L = clamp(0.25×v, 20, 220)`，箭头最后画、位于球上层。

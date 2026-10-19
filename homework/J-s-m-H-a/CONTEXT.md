@@ -108,6 +108,7 @@
 ## 6. 已确定的技术决策
 
 - 语言与依赖：Python 3.12 + OpenCV（`opencv-python-headless`）+ numpy。
+- 代码结构：`main.py` 仅 CLI；实现拆分到 `greenball/` 包（config、segmentation、detection、tracking、speed、annotation、export、pipeline），每个模块带 docstring；测试文件开头标明功能与覆盖范围。
 - 分割：HSV 绿色阈值 → 3×3 开运算（避免大核闭运算粘连）→ 支持 ROI。
 - 候选筛选：面积（自适应）、双圆度指标、长宽比、下方绿色占比、半径一致性；不使用上方绿色占比；HoughCircles 半分辨率兜底。
 - 跟踪：Kalman 匀速模型（4 状态）；**欧氏门限（2.5r）为硬门控**，Mahalanobis 用于排序与 recovery 标记；半径一致性；hits/misses、ROI、丢失外推 5 帧、全图重捕获、重捕获重置 KF、自适应 Q。

@@ -77,7 +77,21 @@ pytest -v homework/J-s-m-H-a/tests
 
 ## 代码结构
 
-单文件 `main.py`，用分隔注释划分为：配置、视频 I/O、绿色分割、候选筛选、Kalman 跟踪、速度门控、标注、导出、CLI。每个部分配有 docstring，说明输入/输出与关键参数。
+`main.py` 仅负责 CLI；实现按功能拆分在 `greenball/` 包中：
+
+| 文件 | 职责 |
+|---|---|
+| `main.py` | 参数解析与程序入口 |
+| `greenball/config.py` | 全部可调参数与默认路径 |
+| `greenball/segmentation.py` | HSV 绿色分割、3×3 开运算、ROI |
+| `greenball/detection.py` | 候选检测、圆柱区分、Hough 兜底 |
+| `greenball/tracking.py` | Kalman 跟踪、门限、丢失/重捕获 |
+| `greenball/speed.py` | 速度 clamp 与 HUD 文本 |
+| `greenball/annotation.py` | 圆框、箭头、文本、轨迹 |
+| `greenball/export.py` | 视频/CSV/抽样帧/拼图/调试导出 |
+| `greenball/pipeline.py` | 逐帧管线与统计 |
+
+每个模块开头都有 docstring，说明职责与关键假设。
 
 ## 验证结果（2026-10-19）
 
