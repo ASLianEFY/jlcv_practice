@@ -1,0 +1,3 @@
+# 只依赖这两个库，Ubuntu 下也可直接用系统包 python3-opencv 代替
+numpy>=1.21
+opencv-python>=4.5
