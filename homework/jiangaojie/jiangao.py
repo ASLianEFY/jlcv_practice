@@ -8,7 +8,7 @@ slower motion.  This is exactly the notation required by the assignment.
 
 Usage
 -----
-    python green_ball_tracker.py --input ../../assets/source.mp4
+    python3 homework/jiangaojie/jiangao.py
 
 The script only needs OpenCV and NumPy.  It writes an annotated MP4, a CSV
 with the per-frame track, and a preview JPEG into ``output/`` by default.
@@ -30,7 +30,7 @@ import numpy as np
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 WORKSPACE = SCRIPT_DIR.parents[1]
-DEFAULT_INPUT = WORKSPACE / "assets" / "source.mp4"
+DEFAULT_INPUT = WORKSPACE / "homework.mp4"
 DEFAULT_OUTPUT_DIR = SCRIPT_DIR / "output"
 
 # The green ball and the green cylinder have almost the same hue.  They are

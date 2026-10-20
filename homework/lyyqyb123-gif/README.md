@@ -22,7 +22,7 @@ pip install -r requirements.txt
 运行（在仓库根目录）：
 
 ```bash
-python3 homework/week0-jlcv/lyyqyb123-gif/detect_green_ball.py
+python3 homework/lyyqyb123-gif/detect_green_ball.py
 ```
 
 默认读取仓库根目录的 `homework.mp4`，输出到脚本所在目录：

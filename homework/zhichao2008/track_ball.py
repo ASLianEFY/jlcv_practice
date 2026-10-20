@@ -4,7 +4,7 @@
 track_ball.py —— 绿球检测、运动方向与速度可视化
 
 功能：
-    1. 读取脚本所在目录中的 homework.mp4；
+    1. 读取仓库根目录中的 homework.mp4；
     2. 基于 HSV 颜色空间分割绿色区域，识别画面中的绿色小球；
     3. 用连续帧约束和形状评分排除绿色圆柱等干扰物；
     4. 在球上绘制方向箭头：箭头方向 = 球的运动方向，
@@ -48,9 +48,9 @@ import numpy as np
 # ============================================================================
 
 # 使用 __file__ 定位脚本所在目录，这样无论从哪个目录执行脚本，
-# 都能正确找到 homework.mp4 并生成 output_video.mp4。
+# 都能找到仓库根目录的 homework.mp4，并在脚本目录生成 output_video.mp4。
 BASE_DIR = Path(__file__).resolve().parent
-INPUT_VIDEO = BASE_DIR / "homework.mp4"
+INPUT_VIDEO = BASE_DIR.parents[1] / "homework.mp4"
 OUTPUT_VIDEO = BASE_DIR / "output_video.mp4"
 
 # HSV 绿色阈值。OpenCV 中 H 的范围是 0~179，不是 0~360。
@@ -715,7 +715,7 @@ def main() -> int:
     """读取视频、逐帧检测/绘制、写出结果视频。"""
     if not INPUT_VIDEO.exists():
         print(f"[错误] 找不到输入视频：{INPUT_VIDEO}")
-        print("       请把 homework.mp4 放在 track_ball.py 同一目录下。")
+        print("       请把 homework.mp4 放在仓库根目录下。")
         return 1
 
     # 打开视频。

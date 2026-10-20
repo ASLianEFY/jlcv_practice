@@ -5,7 +5,7 @@
 
 int main() {
     const std::string inputPath = "homework.mp4";
-    const std::string outputPath = "homework_annotated.mp4";
+    const std::string outputPath = "homework/lvmingtian/legacy/result.mp4";
 
     cv::VideoCapture capture(inputPath);
     if (!capture.isOpened()) {

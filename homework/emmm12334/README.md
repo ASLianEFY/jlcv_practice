@@ -24,7 +24,7 @@ pip install opencv-python numpy
 在仓库根目录 `jlcv_practice/` 下执行：
 
 ```bash
-python3 homework/week1-git-and-cpp/SWJ/green_ball_tracker.py
+python3 homework/emmm12334/green_ball_tracker.py
 ```
 
 预览窗口中按 `q` 键退出。程序固定读取仓库根目录的 `homework.mp4`。

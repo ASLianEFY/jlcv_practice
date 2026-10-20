@@ -24,8 +24,10 @@ import sys
 # 一、可调参数（想改效果就改这里，不用动下面的逻辑）
 # ============================================================
 
-# 输入视频（和本脚本放在同一个文件夹里）
-INPUT_VIDEO = "first-homework.mp4"
+# 输入视频（仓库根目录的 homework.mp4）
+INPUT_VIDEO = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "homework.mp4")
+)
 
 # 输出视频（带箭头的效果视频）
 OUTPUT_VIDEO = "result.mp4"
@@ -239,7 +241,7 @@ def main():
 
     if not os.path.exists(INPUT_VIDEO):
         print(f"[错误] 找不到视频文件：{INPUT_VIDEO}")
-        print("       请把 first-homework.mp4 放到和本脚本同一个文件夹里")
+        print("       请把 homework.mp4 放到仓库根目录")
         sys.exit(1)
 
     # ---- 打开视频 ----

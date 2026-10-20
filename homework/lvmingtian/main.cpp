@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     const std::filesystem::path input_path =
         argc > 1 ? argv[1] : "homework.mp4";
     const std::filesystem::path output_path =
-        argc > 2 ? argv[2] : "homework/week1-git-and-cpp/annotated_video.mp4";
+        argc > 2 ? argv[2] : "homework/lvmingtian/result.mp4";
 
     cv::VideoCapture input(input_path.string());
     if (!input.isOpened()) {

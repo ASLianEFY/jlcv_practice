@@ -1,10 +1,11 @@
 import cv2
 import numpy as np
+from pathlib import Path
 
 
 def main():
     # 读取视频文件
-    video_path = "../../../homework.mp4"
+    video_path = str(Path(__file__).resolve().parents[2] / "homework.mp4")
     cap = cv2.VideoCapture(video_path)
 
     if not cap.isOpened():

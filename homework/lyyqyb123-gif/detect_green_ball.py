@@ -360,8 +360,8 @@ def render_video(input_path, output_path, fps, positions, found_flags, radii,
 
 def main():
     here = Path(__file__).resolve().parent
-    # 仓库根目录: homework/week0-jlcv/lyyqyb123-gif -> 上三级
-    default_input = here.parents[2] / "homework.mp4"
+    # 仓库根目录: homework/lyyqyb123-gif -> 上两级
+    default_input = here.parents[1] / "homework.mp4"
 
     parser = argparse.ArgumentParser(description="识别绿球并标注运动方向与速度")
     parser.add_argument("--input", default=str(default_input), help="输入视频路径")

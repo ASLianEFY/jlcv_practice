@@ -16,7 +16,7 @@
     7. 用外接圆实际半径画圆框；红色箭头方向 = 速度方向，长度 ∝ 速度大小
 
 运行（在仓库根目录 jlcv_practice/ 下）：
-    python3 homework/week1-git-and-cpp/SWJ/green_ball_tracker.py
+    python3 homework/emmm12334/green_ball_tracker.py
 按 q 键退出。依赖：pip install opencv-python numpy
 """
 
@@ -28,7 +28,7 @@ import os
 # ----------------------------------------------------------------------
 # 0. 路径
 # ----------------------------------------------------------------------
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 VIDEO_PATH = os.path.join(REPO_ROOT, "homework.mp4")
 
 # ----------------------------------------------------------------------

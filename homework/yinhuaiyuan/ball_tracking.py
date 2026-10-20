@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
 import math
+from pathlib import Path
 
 cv2.utils.logging.setLogLevel(cv2.utils.logging.LOG_LEVEL_SILENT)
 
 # ================== 1. 参数设置 ==================
-video_path = 'test.mp4' 
+video_path = str(Path(__file__).resolve().parents[2] / "homework.mp4")
 cap = cv2.VideoCapture(video_path)
 
 if not cap.isOpened():
