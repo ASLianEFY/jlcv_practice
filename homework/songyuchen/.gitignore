@@ -1,0 +1,12 @@
+# 运行产物：结果视频、轨迹 CSV、缓存，均不提交
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.csv
+out/
+output/
+result/
+__pycache__/
+*.pyc
+.venv/
