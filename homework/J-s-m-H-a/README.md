@@ -13,8 +13,8 @@
 
 ```bash
 cd <仓库根目录>
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 
 pip install -r homework/J-s-m-H-a/requirements.txt
 # 如需运行测试：

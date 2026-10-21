@@ -70,7 +70,7 @@
 | 系统已装 | Pillow 10.2、GStreamer |
 | 系统未装 | OpenCV、numpy、ffmpeg |
 | 依赖来源 | apt 与 PyPI 均可访问 |
-| 方案 | 仓库根 `.venv` + `requirements.txt` + `requirements-dev.txt` |
+| 方案 | 仓库根 `venv/`（upstream 根 `.gitignore` 已忽略）+ `requirements.txt` + `requirements-dev.txt` |
 | GitHub CLI | 已登录账号 `J-s-m-H-a` |
 | origin | `https://github.com/J-s-m-H-a/jlcv_practice.git`（个人 fork） |
 | upstream | `https://github.com/ASLianEFY/jlcv_practice.git` |
@@ -109,6 +109,7 @@
 
 - 语言与依赖：Python 3.12 + OpenCV（`opencv-python-headless`）+ numpy。
 - 代码结构：`main.py` 仅 CLI；实现拆分到 `greenball/` 包（config、segmentation、detection、tracking、speed、annotation、export、pipeline），每个模块带 docstring；测试文件开头标明功能与覆盖范围。
+- 忽略规则：虚拟环境用仓库根 `venv/`（upstream 根 `.gitignore` 已忽略）；生成物与缓存规则放在 `homework/J-s-m-H-a/.gitignore`，**不修改根 `.gitignore`**，避免与 upstream 的 add/add 冲突。
 - 分割：HSV 绿色阈值 → 3×3 开运算（避免大核闭运算粘连）→ 支持 ROI。
 - 候选筛选：面积（自适应）、双圆度指标、长宽比、下方绿色占比、半径一致性；不使用上方绿色占比；HoughCircles 半分辨率兜底。
 - 跟踪：Kalman 匀速模型（4 状态）；**欧氏门限（2.5r）为硬门控**，Mahalanobis 用于排序与 recovery 标记；半径一致性；hits/misses、ROI、丢失外推 5 帧、全图重捕获、重捕获重置 KF、自适应 Q。

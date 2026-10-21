@@ -125,6 +125,7 @@ homework/J-s-m-H-a/
 ├── CONTEXT.md
 ├── PLAN.md
 ├── README.md
+├── .gitignore                # 作业目录的生成物/缓存规则
 ├── requirements.txt          # opencv-python-headless, numpy（固定版本）
 ├── requirements-dev.txt      # -r requirements.txt, pytest
 ├── main.py                   # 仅 CLI：参数解析与入口
@@ -158,7 +159,7 @@ homework/J-s-m-H-a/
 | # | 提交信息 | 内容 | 对应测试 |
 |---|---|---|---|
 | C1 | `docs(week1): 添加 PLAN/CONTEXT/README` | 三份文档 | 人工审核 |
-| C2 | `chore(week1): 添加 Python 依赖、gitignore 与目录骨架` | `.gitignore`、`requirements*.txt`、`main.py` 骨架、测试目录 | 依赖安装、`--help` |
+| C2 | `chore(week1): 添加 Python 依赖、gitignore 与目录骨架` | 作业目录 `.gitignore`、`requirements*.txt`、`main.py` 骨架、测试目录 | 依赖安装、`--help` |
 | C3 | `feat(week1): 实现绿色区域分割` | HSV + 3×3 开运算 + ROI 支持 | U1 |
 | C4 | `feat(week1): 实现绿球候选筛选与圆柱区分` | 双圆度指标、下方绿色占比、半径自适应、Hough 半分辨率兜底 | U2 |
 | C5 | `feat(week1): 实现 Kalman 跟踪与轨迹管理` | KF、门限、hits/misses、ROI、丢失/重捕获、自适应 Q | U3 |

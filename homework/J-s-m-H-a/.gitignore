@@ -1,5 +1,6 @@
-.venv/
 __pycache__/
 *.pyc
 .pytest_cache/
-homework/J-s-m-H-a/output/
+.venv/
+venv/
+output/
