@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+project(LiguanguanHomework)
+find_package(OpenCV REQUIRED)
+add_executable(liguanguan_vision main.cpp)
+target_link_libraries(liguanguan_vision ${OpenCV_LIBS})
