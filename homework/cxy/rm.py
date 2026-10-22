@@ -1,10 +1,11 @@
+from pathlib import Path
 import cv2
 import numpy as np
 import math
 
 # ================= 配置参数 =================
-VIDEO_PATH = 'test.mp4'        # 你的视频文件名
-OUTPUT_PATH = 'output.mp4'     # 输出视频文件名
+VIDEO_PATH = str(Path(__file__).resolve().parents[2] / "homework.mp4")        # 你的视频文件名
+OUTPUT_PATH = str(Path(__file__).resolve().parent / "result.mp4")     # 输出视频文件名
 
 # 绿色的 HSV 颜色范围（如果你的视频里球颜色偏黄或偏暗，可能需要微调这两个值）
 lower_green = np.array([35, 43, 46])

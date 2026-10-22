@@ -1,8 +1,9 @@
+from pathlib import Path
 import cv2
 import numpy as np
 
 # 视频绝对路径
-VIDEO_PATH = '/home/liuxuhang/vision_ws/jlcv_practice/homework.mp4' 
+VIDEO_PATH = str(Path(__file__).resolve().parents[2] / "homework.mp4")
 
 cap = cv2.VideoCapture(VIDEO_PATH)
 if not cap.isOpened():

@@ -1,356 +1,494 @@
 {
-  "generated_at": "2026-10-20T18:26:38.850495+08:00",
+  "generated_at": "2026-10-22T09:05:49.226194+08:00",
   "input": "homework.mp4",
   "input_sha256": "ec4bd9860a919a155305fb459bc0855a43cef17028a6c52c591d08912e182142",
   "merged_refs": {
-    "upstream/main": "e587f763ce70e0462ab7fe40250ff8dfb3a17302",
-    "gitee/main": "7c57e57a6bdf318020569254444be8b6a9fe1969"
+    "upstream/main": "f4efa91914e751ee16f53f31f39955a0e2a22573",
+    "gitee/main": "f79c99006d0178114bee7e95fd5c3153408fd314"
   },
-  "source_changes": "Submissions consolidated into homework/<name>/. Both lvmingtian implementations are preserved, with the git-basics version under legacy/. Default input/output paths were updated for the current layout; detection algorithms were not changed.",
-  "validation": "All 31 result paths exist with 473 frames at 1280x720, 30 fps, H.264. Existing video sizes match the previous run. The restored lvmingtian legacy version was compiled, run and fully decoded again. Both lvmingtian versions, shangyou, and seven Python submissions passed default-path execution checks.",
+  "source_changes": "Submissions consolidated into homework/<name>/. Both lvmingtian implementations and all three qiang1230qiang versions are preserved. Updated default video paths for moved submissions; detection algorithms were not changed.",
+  "validation": "All 37 programs were run again using the repository input video. All results were encoded as H.264 and fully decoded without errors: 473 frames, 1280x720, 30 fps. GUI-only programs were recorded from their annotated display frames. MP4 files remain local and ignored. J-s-m-H-a: 44 tests passed.",
   "results": [
     {
       "source": "homework/Hanjiaxuan/lvqiu.cpp",
       "result": "homework/Hanjiaxuan/result.mp4",
+      "source_sha256": "f8b8faf4924ec48e1dd262bc67f9c0f11ff1911753837e3fa435af104517788a",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12094313
+      "bytes": 12094313,
+      "result_sha256": "131d05dacc6f92d765d8cb4be7e69ff75dab2b39639615d700958b4e1fcb0df0"
     },
     {
       "source": "homework/KAMI666640/green_ball_tracker.py",
       "result": "homework/KAMI666640/result.mp4",
+      "source_sha256": "b813facffb10bcbdc3f4ba19e47cae0b6123f89a8e84cb2b8ff973ca10b656eb",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12429199
+      "bytes": 12429199,
+      "result_sha256": "6636ec053fe1f3c1004d940b5bb72d1789a44d19d0f25db63a94e0fe179bd718"
     },
     {
       "source": "homework/MengYvhua25/green_ball_tracking.cpp",
       "result": "homework/MengYvhua25/result.mp4",
+      "source_sha256": "10ccacad27552933f8082557dfc42fd48b7115a7126c450c928ca848f26771d0",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 11661860
+      "bytes": 11661860,
+      "result_sha256": "821f26a21d856288d7bc8c4299d1d7e5953f3363710bb8ab4cc9303d2258eb95"
     },
     {
       "source": "homework/Mortis/src/main.cpp",
       "result": "homework/Mortis/result.mp4",
+      "source_sha256": "88a457fed07869fb638d4018748122eabad8d9788d0449ff1d4ff0a30a2bd2d7",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12236624
+      "bytes": 12236624,
+      "result_sha256": "5657b861975a82b0bc6007ff1d074e22e27fdc50c7cddb25233ff17ef1aceeea"
     },
     {
       "source": "homework/Wangzilin/detect_ball.py",
       "result": "homework/Wangzilin/result.mp4",
+      "source_sha256": "4624e483ff788151e9d1403b552ddf1b743073380c169594a809f6a2c09ba1b9",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12186618
+      "bytes": 12186618,
+      "result_sha256": "c8e107a6c10752552580f8eaab2f3de3493a7d5e695f638f1cbbe84d355a8070"
     },
     {
       "source": "homework/Xiangfangcan/detect_ball.py",
       "result": "homework/Xiangfangcan/result.mp4",
+      "source_sha256": "47942c4ed7ccca98611a140a392356a236d55d59a463319b45080f873d71810f",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 11664257
+      "bytes": 11664257,
+      "result_sha256": "050c581a91ff371d3dd549b43f4f56bba78fd14454a768160e6d0ebb5617ecfd"
     },
     {
       "source": "homework/YaoMuXi/main.cpp",
       "result": "homework/YaoMuXi/result.mp4",
+      "source_sha256": "ee7023e116ef3c66bc2101acd96b008633dfeacd455ee7eef1034a49a8473449",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12800475
+      "bytes": 12800475,
+      "result_sha256": "d3d20739c87f7b9135358d0c1452a45a8390e5fc3a24fcfa455f6f7e16c28d9e"
     },
     {
       "source": "homework/fuwencheng/green_ball_tracker.py",
       "result": "homework/fuwencheng/result.mp4",
+      "source_sha256": "3d20cb748eaac56a765d3400c674bd9dea3d1bdc10a8ce60cabd9fee32a3cf46",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 11930676
+      "bytes": 11930676,
+      "result_sha256": "a03c4e0a49ffb6841bb113be955cd7abd24b99f7da1dbd7fcbcfb80e607d2cf2"
     },
     {
       "source": "homework/hanchen/green_ball_tracker.py",
       "result": "homework/hanchen/result.mp4",
+      "source_sha256": "eb075cd9f4d9b95209c87abe9d9b9ecb4f657558dcbab508f6106ef4ff520092",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12420237
+      "bytes": 12420237,
+      "result_sha256": "78dd17708475c871bba96f964e9dd8eaa8ca11a7706dece9e88b2defd574c520"
     },
     {
       "source": "homework/jiangaojie/jiangao.py",
       "result": "homework/jiangaojie/result.mp4",
+      "source_sha256": "4508aa148714f9758af821eba8b7a310fd6801e7c740998480d2dedef2314ed9",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 11890092
+      "bytes": 11890092,
+      "result_sha256": "57ed25b1c08f0a5405d816099f6dd0011bf2fad44ac562781c5bab3a98c0d885"
     },
     {
       "source": "homework/jiangdairu/track_ball.py",
       "result": "homework/jiangdairu/result.mp4",
+      "source_sha256": "4579b068efe5d9604bb244a62f51827e7d2b9279380d0608942aa39ae8f2e789",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12015473
+      "bytes": 12015473,
+      "result_sha256": "b4523d64b75d5d05c8fb80048590472db18905718419ec90d17a25983d872fae"
     },
     {
       "source": "homework/jin-yu-wan-ting/mercr.py",
       "result": "homework/jin-yu-wan-ting/result.mp4",
+      "source_sha256": "9e937f4374b3d15e533b59a08760f82adc73d153293e0c457b6498124d9436fb",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12005889
+      "bytes": 12005889,
+      "result_sha256": "8abd71fa86ff29c222d8cda596b945726b5a0f68257d9a1af240fab618726d33"
     },
     {
       "source": "homework/liguanguan/main.cpp",
       "result": "homework/liguanguan/result.mp4",
+      "source_sha256": "655a8bead2f47ee3cd64ff8910d20748972796bc14d8ce35bad502dcaf225c6c",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12053735
+      "bytes": 12053735,
+      "result_sha256": "84585082c3a4a9149ad11e613e7abce141443b05b89c0a231cf00b3147fc8bbf"
     },
     {
       "source": "homework/shangyou/main.cpp",
       "result": "homework/shangyou/result.mp4",
+      "source_sha256": "ccabbb4ce64532b4866fa4db7d5da5c8571192e52cfcda531fe34f54b7e8c5ae",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12238343
+      "bytes": 12238343,
+      "result_sha256": "ca4f7e916bd78a0802eec5b7209b7d08ffbf04f5da6a66ba51c620bce8f658f1"
     },
     {
       "source": "homework/songyuchen/green_ball_tracker.py",
       "result": "homework/songyuchen/result.mp4",
+      "source_sha256": "ab2ee9d435728e21536189d7b7be92f64d28470ab701d5afd754da1a8731b146",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 13568691
+      "bytes": 13568691,
+      "result_sha256": "521597a9b43a8ae63f6c75e6e632084008a7a9d763ea7ecd95e10ae16b9dc3e7"
     },
     {
       "source": "homework/suowenting/trace_ball.cpp",
       "result": "homework/suowenting/result.mp4",
+      "source_sha256": "87dae4bf6dfb33e915672710508cb42c545ed6188e19b1b165db36c5631817c2",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 11523172
+      "bytes": 11523172,
+      "result_sha256": "01bd1865ef16a9600042c60b63662e0fa1ddac101be2f8bf46fe7d84ae9b3730"
     },
     {
       "source": "homework/tanhaoxuan/main.cpp",
       "result": "homework/tanhaoxuan/result.mp4",
+      "source_sha256": "8229cadec5b287dda24a9c4ac7435c7106f544566f48c9f6a3d83fcae3154efe",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 11878028
+      "bytes": 11878028,
+      "result_sha256": "01ca36fb437f1939588b51bbf1fc517df537a0d5940ab601c7b1e546655c2c15"
     },
     {
       "source": "homework/lyyqyb123-gif/detect_green_ball.py",
       "result": "homework/lyyqyb123-gif/result.mp4",
+      "source_sha256": "0f68839669c4c877323eee09b9981ebf270d9802e861a631f178e167e9d4366a",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12479147
+      "bytes": 13052648,
+      "result_sha256": "6017958ad812839e7ea235161343200584d73c6f470be5a4a5682776333cc3fa"
     },
     {
       "source": "homework/Zort-Greer/zhangguangrui_detect_greenball.py",
       "result": "homework/Zort-Greer/result.mp4",
+      "source_sha256": "53fade24f0f31b0eeb87ac784cde80c26c9686bcca367712f095377a0bc88eb2",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12019387
+      "bytes": 12019387,
+      "result_sha256": "a7bd20cb95f40ed98b87a1f0dfb1295c382527db2dd39add89cea4a58bca82e2"
     },
     {
       "source": "homework/emmm12334/green_ball_tracker.py",
       "result": "homework/emmm12334/result.mp4",
+      "source_sha256": "0c1494cf3ecf59a459d27114faaaf957bc6f6fc9966fbba2e03b6074f93c3591",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12072446
+      "bytes": 12072446,
+      "result_sha256": "68a0f8b425289c866eed3b0055ba30d1fc3a8199bfb6c66e2265915e700bc257"
     },
     {
       "source": "homework/lvmingtian/main.cpp",
       "result": "homework/lvmingtian/result.mp4",
+      "source_sha256": "6bb454cb33f440011f6e3a7381274e33b93622129e1f0e7d1b16f90eee9a5651",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 11914410
+      "bytes": 11914410,
+      "result_sha256": "afc005f38ff03c230386b3de51ca8af68deb3f510bef8c9ed8fed475b27b09a1"
     },
     {
-      "source": "homework/qiang1230qiang/main.cpp",
-      "result": "homework/qiang1230qiang/result.mp4",
+      "source": "homework/qiang1230qiang/legacy/v2.cpp",
+      "result": "homework/qiang1230qiang/legacy/result_v2.mp4",
+      "source_sha256": "5637111bf0d6f2a4a10f1c8bf0d019c373bc59fe37c524829432e96803c0bc85",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12536654
+      "bytes": 12536654,
+      "result_sha256": "c5b52c4ea1eb92cf036a483143fdcf479069bcc398dff1f4234217765f2c87dc"
     },
     {
       "source": "homework/zhichao2008/track_ball.py",
       "result": "homework/zhichao2008/result.mp4",
+      "source_sha256": "854499b39c0e8cd1474e11a47fbdb244481097872a151405cfaa562e9eec46fc",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12297995
+      "bytes": 12297995,
+      "result_sha256": "406e3f64eeb618955bf0a33721fdd6a520ce25a10f1b0add48a1961ed41c6212"
     },
     {
       "source": "homework/lvmingtian/legacy/main.cpp",
       "result": "homework/lvmingtian/legacy/result.mp4",
+      "source_sha256": "3c3b76f9fa4c2c5358bc4b4069643b0f052918e0707b634375c4a5d35c6cab2e",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12169581
+      "bytes": 12169581,
+      "result_sha256": "752de2561a7291bbc7662793e4c2ec584527cbe6c5316980b1daa5a0d5c4a5bc"
     },
     {
-      "source": "homework/qiangshiting26/main.cpp",
-      "result": "homework/qiangshiting26/result.mp4",
+      "source": "homework/qiang1230qiang/legacy/v1.cpp",
+      "result": "homework/qiang1230qiang/legacy/result_v1.mp4",
+      "source_sha256": "abdda5c115ee2b2ed2fbc28971dbea98df3f9160bf7b3b1516b60dcd7fe82d46",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 13084694
+      "bytes": 13084694,
+      "result_sha256": "1472c4c9ccdb64e48932824e4de2081bac40f1b7dbefdfed3bfdaafcfcd52f57"
     },
     {
       "source": "homework/yinhuaiyuan/ball_tracking.py",
       "result": "homework/yinhuaiyuan/result.mp4",
+      "source_sha256": "0988abb9f1c4f366fefc4036a77be2b0aa27215fbc169e7aee4efc86dd3afa55",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12909195
+      "bytes": 12909195,
+      "result_sha256": "2a10f8e31200519e1fefc19908fda16c12e831331eb4f26be9c65d38c8ff953d"
     },
     {
       "source": "homework/yzk0820/homework1杨泽楷.cpp",
       "result": "homework/yzk0820/result.mp4",
+      "source_sha256": "2b6a804dd0f2bd101ba371de6174cad268cfa86ec757369036e3089b4221d2ab",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766016",
       "nb_read_frames": "473",
-      "bytes": 13650049
+      "bytes": 13650049,
+      "result_sha256": "74791044b4cfa7700c13949debe048303d3ea838137db03a080f5d2b95128a80"
     },
     {
       "source": "homework/zhaodongsheng/detect_ball.py",
       "result": "homework/zhaodongsheng/result.mp4",
+      "source_sha256": "2870e276c9d32b2b78c86b076c6b2aad4cdf01e2685230af87be36384240d6df",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 11714655
+      "bytes": 11714655,
+      "result_sha256": "9339bc51739704f54415ea1135c517a9e24e50b938f74a5e6c7a1ad8d9f4270d"
     },
     {
       "source": "homework/zhounuolin/green_ball_tracker.py",
       "result": "homework/zhounuolin/result.mp4",
+      "source_sha256": "2ef228f312312d6f96c6702099509eb69a047e5711469805674bc2155d72ef8d",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 13552095
+      "bytes": 13552095,
+      "result_sha256": "097405434dd2227ba28d5ef06437344afe3493a5174ab24dd21520205679009d"
     },
     {
       "source": "homework/涂定邦/涂定邦.cpp",
       "result": "homework/涂定邦/result.mp4",
+      "source_sha256": "26255cf06ba1104ce6e10f7b8b3e4a5d94461ca36b3d7a86e1058bb8e9a4740a",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 11945625
+      "bytes": 11945625,
+      "result_sha256": "cbbea5d215f61284f08be02f2676b3ce1fbb165ba059a4d247bf0d9a8d564012"
     },
     {
       "source": "homework/苏欣雨/main.cpp",
       "result": "homework/苏欣雨/result.mp4",
+      "source_sha256": "48353a19663463e1576a2d42ebafb335313bc8bc1287a310ddf6508f1761a986",
       "codec_name": "h264",
       "width": 1280,
       "height": 720,
       "r_frame_rate": "30/1",
       "duration": "15.766667",
       "nb_read_frames": "473",
-      "bytes": 12121563
+      "bytes": 12121563,
+      "result_sha256": "0ef384ad37c7acf97e0938040ca8c8c9736c1626f3ecc1e0fe2cd43a4661bbed"
+    },
+    {
+      "source": "homework/J-s-m-H-a/main.py",
+      "result": "homework/J-s-m-H-a/result.mp4",
+      "source_sha256": "1d056ad2b48dab311612e9443cba7e3c07d0222dde613f86a2ccf147d0bebc84",
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "duration": "15.766667",
+      "nb_read_frames": "473",
+      "bytes": 12096515,
+      "result_sha256": "1e9856dee07903a42f27936be3f578e4e8a5f6b32d9110d94216a036cc7ef7d4"
+    },
+    {
+      "source": "homework/southwardaai/green_ball_tracker.py",
+      "result": "homework/southwardaai/result.mp4",
+      "source_sha256": "4c6462cd49f18c847080fdf8206e66e910c0177a119d3228024439db018d8cc0",
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "duration": "15.766667",
+      "nb_read_frames": "473",
+      "bytes": 13515545,
+      "result_sha256": "3a40f63fa4a617c2b6ab380d0b19d5beeb100ce66c854eea574a9a3decbad7a2"
+    },
+    {
+      "source": "homework/V23/test.cpp",
+      "result": "homework/V23/result.mp4",
+      "source_sha256": "d5734c371710b98963bbb1c97d36a7015e8c7a1b008c212b59b7406b75e35ae4",
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "duration": "15.766667",
+      "nb_read_frames": "473",
+      "bytes": 12737975,
+      "result_sha256": "fb57df3df8ea053ebf191a0c281a1906f2d14db739815e486c48ed205e52688a"
+    },
+    {
+      "source": "homework/cxy/rm.py",
+      "result": "homework/cxy/result.mp4",
+      "source_sha256": "446df224210bd1b748f07cc1bcbe98b6d8892f29cf73dc7e880bf9824e306ef4",
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "duration": "15.766667",
+      "nb_read_frames": "473",
+      "bytes": 12107109,
+      "result_sha256": "5b03ec72e72fd015cc47066c41b3847ded5fbc6e579407b100018399fbeb4c11"
+    },
+    {
+      "source": "homework/liuxuhang/main.py",
+      "result": "homework/liuxuhang/result.mp4",
+      "source_sha256": "79e42187210a36db171c13ea8aa3f07fd1ffaffe7549dba767924c7c2dc3ec86",
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "duration": "15.766667",
+      "nb_read_frames": "473",
+      "bytes": 11883111,
+      "result_sha256": "821efdcfcca7636d5d981cf2ca947921ad67a39ebd7fb468542245e9a4456803"
+    },
+    {
+      "source": "homework/qiang1230qiang/main.cpp",
+      "result": "homework/qiang1230qiang/result.mp4",
+      "source_sha256": "f6bff15790d0c0ebe238f344eb518f1a843dd2fbeebf5b00eeb5f4ec2ace3207",
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "duration": "15.766667",
+      "nb_read_frames": "473",
+      "bytes": 11929242,
+      "result_sha256": "4efd711ef2089fcdc6ab1285e756ad37e3017a6e4db4d1fff246c5ba74961b91"
     }
-  ],
-  "organized_at": "2026-10-20T18:36:49.147215+08:00",
-  "video_tracking": "All MP4 files are local-only and ignored by Git. Place homework.mp4 at the repository root before running."
+  ]
 }

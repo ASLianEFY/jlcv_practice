@@ -8,7 +8,7 @@ using namespace std;
 
 int main() {
     // --- 1. Open video ---
-    string videoPath = "your_video.mp4";   // <-- replace with actual path
+    string videoPath = "homework.mp4";   // 从仓库根目录运行
     VideoCapture cap(videoPath);
     if (!cap.isOpened()) {
         cerr << "Error: cannot open video: " << videoPath << endl;
@@ -23,7 +23,7 @@ int main() {
     Scalar upperGreen(85, 255, 255);
 
     // --- 3. Video writer setup ---
-    string outputPath = "homework/name/output_with_arrows.avi";
+    string outputPath = "homework/V23/output_with_arrows.avi";
     int fourcc = VideoWriter::fourcc('M', 'J', 'P', 'G');
     double outFps = fps;
     Size frameSize;
