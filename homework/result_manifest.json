@@ -6,8 +6,8 @@
     "upstream/main": "f4efa91914e751ee16f53f31f39955a0e2a22573",
     "gitee/main": "f79c99006d0178114bee7e95fd5c3153408fd314"
   },
-  "source_changes": "Submissions consolidated into homework/<name>/. Both lvmingtian implementations and all three qiang1230qiang versions are preserved. Updated default video paths for moved submissions; detection algorithms were not changed.",
-  "validation": "All 37 programs were run again using the repository input video. All results were encoded as H.264 and fully decoded without errors: 473 frames, 1280x720, 30 fps. GUI-only programs were recorded from their annotated display frames. MP4 files remain local and ignored. J-s-m-H-a: 44 tests passed.",
+  "source_changes": "Submissions consolidated into homework/<name>/. Both lvmingtian implementations are preserved. Only the latest qiang1230qiang version (3.0) is retained. Updated default video paths for moved submissions; detection algorithms were not changed.",
+  "validation": "All 35 retained programs were run again using the repository input video. All results were encoded as H.264 and fully decoded without errors: 473 frames, 1280x720, 30 fps. GUI-only programs were recorded from their annotated display frames. MP4 files remain local and ignored. J-s-m-H-a: 44 tests passed.",
   "results": [
     {
       "source": "homework/Hanjiaxuan/lvqiu.cpp",
@@ -283,19 +283,6 @@
       "result_sha256": "afc005f38ff03c230386b3de51ca8af68deb3f510bef8c9ed8fed475b27b09a1"
     },
     {
-      "source": "homework/qiang1230qiang/legacy/v2.cpp",
-      "result": "homework/qiang1230qiang/legacy/result_v2.mp4",
-      "source_sha256": "5637111bf0d6f2a4a10f1c8bf0d019c373bc59fe37c524829432e96803c0bc85",
-      "codec_name": "h264",
-      "width": 1280,
-      "height": 720,
-      "r_frame_rate": "30/1",
-      "duration": "15.766667",
-      "nb_read_frames": "473",
-      "bytes": 12536654,
-      "result_sha256": "c5b52c4ea1eb92cf036a483143fdcf479069bcc398dff1f4234217765f2c87dc"
-    },
-    {
       "source": "homework/zhichao2008/track_ball.py",
       "result": "homework/zhichao2008/result.mp4",
       "source_sha256": "854499b39c0e8cd1474e11a47fbdb244481097872a151405cfaa562e9eec46fc",
@@ -320,19 +307,6 @@
       "nb_read_frames": "473",
       "bytes": 12169581,
       "result_sha256": "752de2561a7291bbc7662793e4c2ec584527cbe6c5316980b1daa5a0d5c4a5bc"
-    },
-    {
-      "source": "homework/qiang1230qiang/legacy/v1.cpp",
-      "result": "homework/qiang1230qiang/legacy/result_v1.mp4",
-      "source_sha256": "abdda5c115ee2b2ed2fbc28971dbea98df3f9160bf7b3b1516b60dcd7fe82d46",
-      "codec_name": "h264",
-      "width": 1280,
-      "height": 720,
-      "r_frame_rate": "30/1",
-      "duration": "15.766667",
-      "nb_read_frames": "473",
-      "bytes": 13084694,
-      "result_sha256": "1472c4c9ccdb64e48932824e4de2081bac40f1b7dbefdfed3bfdaafcfcd52f57"
     },
     {
       "source": "homework/yinhuaiyuan/ball_tracking.py",
