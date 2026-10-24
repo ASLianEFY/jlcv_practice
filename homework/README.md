@@ -80,3 +80,6 @@ python main.py
 - 目录名 `myhomework` 是占位名，提交前改成你的 GitHub 用户名。
 - 仓库根目录 `.gitignore` 里有 `**/*.mp4`，`git add` 会**静默跳过**结果视频；
   要带上 `output.mp4` 必须用 `git add -f`。
+
+## AI辅助
+本作业由deepseek-v4-flash辅助完成
